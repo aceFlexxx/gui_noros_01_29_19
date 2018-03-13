@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import spidev
+import time
 
 class FrequencyController:
 
@@ -14,10 +15,11 @@ class FrequencyController:
 	tx_lsb1 = input1 & 0xFF
 	#self._spiEV.xfer2([tx_msb1,tx_lsb1])
 
-	self._spi.xfer([tx_msb1,tx_lsb1])
+	self._spi.xfer([tx_msb1])
+	self._spi.xfer([tx_lsb1])
 
     def setup_sine(self,freq):
-	word = int(round(freq*2.0**28)/25000000)
+	word = long(round(freq*2.0**28)/25000000)
 	MSB = (word & 0xFFFC000)>>14
 	LSB = (word & 0x3FFF)
 	
@@ -27,9 +29,13 @@ class FrequencyController:
 	phase = 0xC000
 	
 	self._sendData(0x2100)				#Control Register
+        time.sleep(.001)
 	self._sendData(LSB)
+        time.sleep(.001)
 	self._sendData(MSB)
+        time.sleep(.001)
 	self._sendData(phase)
+        time.sleep(.001)
 	self._sendData(0x2000)				#Exit Reset
 
     def setup_square(self,freq):

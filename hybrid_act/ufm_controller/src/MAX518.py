@@ -6,13 +6,16 @@ import time
 class OutputController:
 
     def __init__(self, address):
-        self._bus = smbus.SMBus(0)
+        self._bus = smbus.SMBus(1)
         self._address = address
 
     def DAC_output(self, output1, output2):
-        self._bus.write_byte(address, address)
-        self._bus.write_byte(address, 0x00)
-        self._bus.write_byte(address, output1)
-        self._bus.write_byte(address, 0x01)
-        self._bus.write_byte(address, output1)
+        output1 = int(output1/5.0*255)
+        output2 = int(output2/5.0*255)
+
+        self._bus.write_byte_data(self._address, 0x00, self._address)
+        self._bus.write_byte_data(self._address, 0x00, 0x00)
+        self._bus.write_byte_data(self._address, 0x00, output1)
+        self._bus.write_byte_data(self._address, 0x01, 0x01)
+        self._bus.write_byte_data(self._address, 0x01, output2)
         

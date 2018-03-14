@@ -58,7 +58,7 @@ class FrequencyController:
 	self._sendData(0x0000)
 	self._sendData(0x0068)
 
-    def close(self):
+    def AD9833_close(self):
 	if self._spi != None:
 	    self.stop_signal()
 	    self._spi.close()

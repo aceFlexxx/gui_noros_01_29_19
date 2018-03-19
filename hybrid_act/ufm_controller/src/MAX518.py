@@ -3,7 +3,7 @@
 import smbus
 import time
 
-class OutputController:
+class OutputController(object):
 
     def __init__(self, address):
         self._bus = smbus.SMBus(1)

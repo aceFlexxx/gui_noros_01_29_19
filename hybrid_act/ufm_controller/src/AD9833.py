@@ -3,7 +3,7 @@
 import spidev
 import time
 
-class FrequencyController:
+class FrequencyController(object):
 
     def __init__(self, channel):
 	self._spi = spidev.SpiDev()

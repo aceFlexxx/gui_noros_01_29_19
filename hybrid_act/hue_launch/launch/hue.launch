@@ -2,7 +2,14 @@
 
 <launch>
     <node name="ir_corrector" pkg="ir_correction" type="ir_corrector.py" output="screen"/>
-    <node name="ufm_control" pkg="ufm_controller" type="ufm_control.py" output="screen"/>
     <node name="ws_gen" pkg="ws_generator" type="ws_gen.py" output="screen"/>
+    <node name="ufm_control" pkg="haptic_generator" type="haptic_gen.py" output="screen">
+        <param name="name" value="ufm"/>
+        <param name="spi_address" value=0/>
+        <param name="i2c_address" value=0x2c/>
+        <param name="scale" value=0.6/>
+    </node>
+
+    
 </launch>
 

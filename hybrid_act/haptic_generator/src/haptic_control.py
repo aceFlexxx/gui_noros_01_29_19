@@ -4,7 +4,7 @@ import numpy as np
 import rospy
 import message_filters
 from std_msgs.msg import Int32MultiArray
-from ufm_controller.msg import IntArray, WSArray
+from haptic_generator.msg import IntArray, WSArray
 from AD9833 import FrequencyController
 from MAX518 import OutputController
 

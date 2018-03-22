@@ -2,7 +2,9 @@
 
 import wx
 import rospy
+import rospkg
 import numpy as np
+import os
 from std_msgs.msg import String
 from ws_generator.msg import WSArray
 
@@ -25,6 +27,7 @@ class Frame(wx.Frame):
         """"""
         self.ws_ufm_pub = rospy.Publisher('/cursor_position/workspace/ufm', WSArray, queue_size = 0)
         self.ws_ev_pub = rospy.Publisher('/cursor_position/workspace/ev', WSArray, queue_size = 0)
+        self.rospack = rospkg.RosPack()
         rospy.init_node('gui_ws')
         
         wx.Frame.__init__(self, None, wx.ID_ANY, "Hybridization Comparison")
@@ -90,7 +93,10 @@ class Frame(wx.Frame):
         dc.SetBackground(brush)
         dc.Clear()
 
-        picture = wx.Bitmap("haptics_symp.png")
+        #path = os.path.join('~/catkin_ws/src/hue/hybrid_act/ws_generator/ref', 'haptics_symp.png')
+        path = self.rospack.get_path('ws_generator')
+        path = os.path.join(path, 'ref/haptics_symp.png')
+        picture = wx.Bitmap(path)
         width,height = picture.GetSize()
 
         dc.DrawBitmap(picture,(self.width-width)/2,(self.height-height)/2,True)
@@ -154,13 +160,24 @@ class Frame(wx.Frame):
         ufm_intensity = []
         ev_intensity = []
 
-        y_ws = []
-        
-        for i in range(3):
-            rectangle_y = self.first_rectangle_y+(self.rectangle_size + self.rectangle_seperation)*i 
-            y_ws.append(rectangle_y)
-            y_ws.append(rectangle_y+self.rectangle_size)
+        """Determine y workspace bounds"""
+        y_ws_ufm, y_ws_ev = []
 
+        rectangle_y = self.first_rectangle_y
+        y_ws_ev.append(rectangle_y)
+        y_ws_ev.append(rectangle_y+self.rectangle_size)
+        
+        rectangle_y = rectangle_y + self.rectangle_size + self.rectangle_seperation
+        y_ws_ufm.append(rectangle_y) 
+        y_ws_ufm.append(rectangle_y + self.rectangle_size)
+        
+        rectangle_y = rectangle_y + self.rectangle_size + self.rectangle_seperation
+        y_ws_ev.append(rectangle_y) 
+        y_ws_ev.append(rectangle_y + self.rectangle_size)
+        y_ws_ufm.append(rectangle_y) 
+        y_ws_ufm.append(rectangle_y + self.rectangle_size)
+
+        """Determine x intensities correlating with texture"""
         if texture == "Bump":
 
             x_center = (self.haptic_width)/2
@@ -208,22 +225,22 @@ class Frame(wx.Frame):
                     ufm_intensity.append(max(0,sinusoid))
                     ev_intensity.apend(max(0,-sinusoid))
 
-        ufm_msg = WSArray()
-        ufm_msg.header.stamp = rospy.Time(0.0)
-        ufm_msg.ystep = 3
-        ufm_msg.y_ws = y_ws
-        ufm_msg.intstep = 1
-        ufm_msg.intensity = ufm_intensity
-
         ev_msg = WSArray()
         ev_msg.header.stamp = rospy.Time(0.0)
         ev_msg.ystep = 3
-        ev_msg.y_ws = y_ws
+        ev_msg.y_ws = y_ws_ev
         ev_msg.intstep = 1
         ev_msg.intensity = ev_intensity
 
-        #self.ws_ufm_pub.pub(ufm_msg)
-        #self.ws_ev_pub.pub(ev_msg)
+        ufm_msg = WSArray()
+        ufm_msg.header.stamp = rospy.Time(0.0)
+        ufm_msg.ystep = 3
+        ufm_msg.y_ws = y_ws_ufm
+        ufm_msg.intstep = 1
+        ufm_msg.intensity = ufm_intensity
+
+        self.ws_ufm_pub.pub(ufm_msg)
+        self.ws_ev_pub.pub(ev_msg)
 
 # Run the program
 if __name__ == "__main__":

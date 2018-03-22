@@ -1,6 +1,10 @@
+#! /usr/bin/env python
+
 import wx
 import rospy
+import numpy as np
 from std_msgs.msg import String
+from ws_generator.msg import WSArray
 
 ##############################################################################80
 class Texture:
@@ -19,22 +23,30 @@ class Frame(wx.Frame):
     #----------------------------------------------------------------------
     def __init__(self):
         """"""
-        #self.texture_pub = rospy.Publisher('/cursor_position/workspace_texture', String, queue_size = 0)
-        #rospy.init_node('gui')
+        self.ws_ufm_pub = rospy.Publisher('/cursor_position/workspace/ufm', WSArray, queue_size = 0)
+        self.ws_ev_pub = rospy.Publisher('/cursor_position/workspace/ev', WSArray, queue_size = 0)
+        rospy.init_node('gui_ws')
         
         wx.Frame.__init__(self, None, wx.ID_ANY, "Hybridization Comparison")
         self.Maximize(True)
         self.width, self.height = wx.GetDisplaySize()
-        self.first_rectangle_y = 0.15*self.height
-        self.rectangle_size = 0.2*self.height
-        self.rectangle_seperation = (self.height-2*self.first_rectangle_y)/(3*self.rectangle_size)
+        self.width_half = self.width/2.0
+        
+        self.first_rectangle_y = 0.1*self.height
+        self.bottom_space = 0.035*self.height
+
+        self.rectangle_size = 0.175*self.height
+        self.rectangle_seperation = int((self.height-self.first_rectangle_y-self.bottom_space-3*self.rectangle_size)/3.0)
+        
         self.rectangle_color = "GREY"
 
         self.textbox_width = 0.25*self.width
-        self.textbox_x = 0.15*self.width
+        self.textbox_x = 0.1*self.width
         self.textbox_y = self.rectangle_size*0.35
         self.textbox_color = "WHITE"
         self.textbox_fontsize = 42 
+
+        self.haptic_width = self.width - self.textbox_width
 
         self.background_color = "BLACK"
 
@@ -42,19 +54,17 @@ class Frame(wx.Frame):
         self.panel = wx.Panel(self, wx.ID_ANY)
         self.panel.Bind(wx.EVT_PAINT, self.OnPaint)
 
-        #self.panel.SetBackgroundColour('grey')
-        #self.ufm_text = wx.StaticText(self, -1, label="UFM", pos=(0,self.first_rectangle_y))
-
         textures = [Texture(0, "Bump"),
                     Texture(1, "Sinusoidal"),
-                    Texture(2, "Triangular")]
+                    Texture(2, "Triangular"),
+                    Texture(3, "Square")]
 
         sampleList = []
 
         self.cb = wx.ComboBox(self.panel,
                               size=wx.DefaultSize,
                               choices=sampleList,
-                              pos=(.85*self.width,0.05*self.height))
+                              pos=(0.1*self.width,0.05*self.height))
         self.widgetMaker(self.cb, textures)
 
         self.Centre()
@@ -88,16 +98,41 @@ class Frame(wx.Frame):
         dc.SetFont(font)
 
         """EV Rectangle"""
+        rectangle_y = self.first_rectangle_y
         dc.SetPen(wx.Pen(self.rectangle_color))
         dc.SetBrush(wx.Brush(self.rectangle_color))
         # set x, y, w, h for rectangle
-        dc.DrawRectangle(0, self.first_rectangle_y, self.width, self.rectangle_size)
+        dc.DrawRectangle(0, rectangle_y, self.width, self.rectangle_size)
         dc.SetPen(wx.Pen(self.textbox_color))
         dc.SetBrush(wx.Brush(self.textbox_color))
-        dc.DrawRectangle(0, self.first_rectangle_y, self.textbox_width, self.rectangle_size)
-        dc.DrawText("EV", self.textbox_x, self.first_rectangle_y+self.textbox_y)
-        #self.ufm_text.SetFont(self.font)
+        dc.DrawRectangle(0, rectangle_y, self.textbox_width, self.rectangle_size)
+        textbox = wx.Rect(self.textbox_x, rectangle_y+self.textbox_y)
+        dc.DrawLabel("EV", textbox, alignment=1)
 
+        """UFM Rectangle"""
+        rectangle_y = self.first_rectangle_y+(self.rectangle_size+self.rectangle_seperation)
+        dc.SetPen(wx.Pen(self.rectangle_color))
+        dc.SetBrush(wx.Brush(self.rectangle_color))
+        # set x, y, w, h for rectangle
+        dc.DrawRectangle(0, rectangle_y, self.width, self.rectangle_size)
+        dc.SetPen(wx.Pen(self.textbox_color))
+        dc.SetBrush(wx.Brush(self.textbox_color))
+        dc.DrawRectangle(0, rectangle_y, self.textbox_width, self.rectangle_size)
+        textbox = wx.Rect(self.textbox_x, rectangle_y+self.textbox_y)
+        dc.DrawLabel("UFM", textbox, alignment=1)
+
+        """Hybrid Rectangle"""
+        rectangle_y = self.first_rectangle_y+(self.rectangle_size+self.rectangle_seperation)*2
+        dc.SetPen(wx.Pen(self.rectangle_color))
+        dc.SetBrush(wx.Brush(self.rectangle_color))
+        # set x, y, w, h for rectangle
+        dc.DrawRectangle(0, rectangle_y, self.width, self.rectangle_size)
+        dc.SetPen(wx.Pen(self.textbox_color))
+        dc.SetBrush(wx.Brush(self.textbox_color))
+        dc.DrawRectangle(0, rectangle_y, self.textbox_width, self.rectangle_size)
+        textbox = wx.Rect(self.textbox_x, rectangle_y+self.textbox_y)
+        dc.DrawLabel("Hybrid", textbox, alignment=1)
+        
         dc.EndDrawing()
         del dc
         
@@ -112,8 +147,83 @@ class Frame(wx.Frame):
 
         """ % (obj.id, obj.shape)
         print text
-        texture = self.cb.GetStringSelection()
-        #self.texture_pub.publish(texture)
+        self.generate_workspace(self.cb.GetStringSelection())
+
+    def generate_workspace(self, texture):
+
+        ufm_intensity = []
+        ev_intensity = []
+
+        y_ws = []
+        
+        for i in range(3):
+            rectangle_y = self.first_rectangle_y+(self.rectangle_size + self.rectangle_seperation)*i 
+            y_ws.append(rectangle_y)
+            y_ws.append(rectangle_y+self.rectangle_size)
+
+        if texture == "Bump":
+
+            x_center = (self.haptic_width)/2
+            x_biasedcenter = x_center+self.textbox_width
+            
+            x_haptic_switch = [x_biasedcenter-150,x_biasedcenter+150]
+            x_ufm_dropoff = [x_biasedcenter-250,x_biasedcenter+250] 
+            x_ev_max = [x_biasedcenter-30,x_biasedcenter+30] 
+
+            c1 = (x_haptic_switch[0]-x_biasedcenter)**2
+            c2 = (x_ufm_dropoff[0]-x_biasedcenter)**2
+            kufm = -c1/(c2-c1) 
+            aufm = (1.0-kufm)/c2
+
+            c3 = (x_ev_max[0]-x_biasedcenter)**2
+            kev = -c1/(c3-c1)
+            aev = (1.0-kev)/c3
+
+            for index in range(self.width):
+                if (index <= self.textbox_width):
+                    ufm_intensity.append(0.0)
+                    ev_intensity.append(0.0)
+
+                elif (index <= x_ufm_dropoff[0] or index >= x_ufm_dropoff[1]): 
+                    ufm_intensity.append(1.0)
+                    ev_intensity.append(0.0)
+
+                elif (index <= x_ufm_dropoff or x >= x_ufm_dropoff[1]):
+                    ufm_int = aufm*(index-x_biasedcenter)**2+kufm
+                    ufm_intensity.append(max(0,min(1,ufm_int)))
+
+                    ev_int = aev*(index-x_biasedcenter)**2+kev
+                    ev_intensity.append(max(0,min(1,ev_int))) 
+
+        elif texture == "Sinusoid":
+            periods = 3
+
+            for index in range(self.width):
+                if (index<=self.textbox_width):
+                    ufm_intensity.append(0.0)
+                    ev_intensity.append(0.0)
+
+                else:
+                    sinusoid = np.sin((index-self.textbox_width)/self.haptic_width*periods*2*np.pi)
+                    ufm_intensity.append(max(0,sinusoid))
+                    ev_intensity.apend(max(0,-sinusoid))
+
+        ufm_msg = WSArray()
+        ufm_msg.header.stamp = rospy.Time(0.0)
+        ufm_msg.ystep = 3
+        ufm_msg.y_ws = y_ws
+        ufm_msg.intstep = 1
+        ufm_msg.intensity = ufm_intensity
+
+        ev_msg = WSArray()
+        ev_msg.header.stamp = rospy.Time(0.0)
+        ev_msg.ystep = 3
+        ev_msg.y_ws = y_ws
+        ev_msg.intstep = 1
+        ev_msg.intensity = ev_intensity
+
+        #self.ws_ufm_pub.pub(ufm_msg)
+        #self.ws_ev_pub.pub(ev_msg)
 
 # Run the program
 if __name__ == "__main__":

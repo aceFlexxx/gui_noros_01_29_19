@@ -196,12 +196,13 @@ class Frame(wx.Frame):
             kev = -c1/(c3-c1)
             aev = (1.0-kev)/c3
 
-            for index in range(self.width):
-                if (index <= self.textbox_width):
-                    ufm_intensity.append(0.0)
-                    ev_intensity.append(0.0)
+            """Set haptic intensity = 0 over textbox"""
+            ufm_intensity = ev_intensity = [0]*self.textbox_width
+            
+            for index in range(self.haptic_width):
+                index = index + self.textbox_width
 
-                elif (index <= x_ufm_dropoff[0] or index >= x_ufm_dropoff[1]): 
+                if (index <= x_ufm_dropoff[0] or index >= x_ufm_dropoff[1]): 
                     ufm_intensity.append(1.0)
                     ev_intensity.append(0.0)
 
@@ -215,15 +216,48 @@ class Frame(wx.Frame):
         elif texture == "Sinusoid":
             periods = 3
 
-            for index in range(self.width):
-                if (index<=self.textbox_width):
-                    ufm_intensity.append(0.0)
-                    ev_intensity.append(0.0)
+            """Set haptic intensity = 0 over textbox"""
+            ufm_intensity = ev_intensity = [0]*self.textbox_width
 
+            for index in range(self.haptic_width):
+                sinusoid = np.sin(index/self.haptic_width*periods*2*np.pi)
+                ufm_intensity.append(max(0,sinusoid))
+                ev_intensity.apend(max(0,-sinusoid))
+
+        elif texture == "Triangular":
+            periods = 2 
+            trangle_width = self.haptic_width/4
+            
+            UFM_INCREASE = True
+            EV_INCREASE = False
+
+            """Set haptic intensity = 0 over textbox"""
+            ufm_intensity = ev_intensity = [0]*self.textbox_width
+
+            for i in range(periods*4):
+                if UFM_INCREASE: UFM_INCREASE = not UFM_INCREASE
+                elif EV_INCREASE: EV_INCREASE = not EV_INCREASE
+                else UFM_INCREASE = True
+                
+                for index in range(triangle_width):
+                    if (UFM_INCREASE and not EV_INCREASE):
+                        amp = index/triangle_width
+                        ufm_intensity.append(amp
+
+        elif texture == "Square":
+            periods = 10 
+
+            """Set haptic intensity = 0 over textbox"""
+            ufm_intensity = ev_intensity = [0]*self.textbox_width
+
+            for index in range(self.haptic_width):
+                sinusoid = np.sin(index/self.haptic_width*periods*2*np.pi)
+                if (sinusoid > 0):
+                    ufm_intensity.append(1.0)
+                    ev_intensity.append(0.0)
                 else:
-                    sinusoid = np.sin((index-self.textbox_width)/self.haptic_width*periods*2*np.pi)
-                    ufm_intensity.append(max(0,sinusoid))
-                    ev_intensity.apend(max(0,-sinusoid))
+                    ufm_intensity.append(0.0)
+                    ev_intensity.append(1.0)
 
         ev_msg = WSArray()
         ev_msg.header.stamp = rospy.Time(0.0)

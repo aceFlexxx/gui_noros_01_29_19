@@ -8,12 +8,7 @@
 
     <node name="ws_gen" pkg="ws_generator" type="gui_generator.py" output="screen"/>
 
-    <node name="ufm_control" pkg="haptic_generator" type="haptic_control.py" output="screen">
-        <param name="name" value="ufm"/>
-        <param name="spi_address" value="0" type="int"/>
-        <param name="i2c_address" value="0x2c"/>
-        <param name="scale" value="0.6"/>
-    </node>
-
+    <include file="$(find haptic_generator)/launch/haptic.launch"/>
+    
 </launch>
 

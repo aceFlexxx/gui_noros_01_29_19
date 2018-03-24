@@ -43,8 +43,8 @@ class Frame(wx.Frame):
         
         self.rectangle_color = "GREY"
 
-        self.textbox_width = 0.25*self.width
-        self.textbox_x = 0.1*self.width
+        self.textbox_width = 0.225*self.width
+        self.textbox_x = 0.06*self.width
         self.textbox_y = self.rectangle_size*0.35
         self.textbox_color = "WHITE"
         self.textbox_fontsize = 42 
@@ -161,7 +161,8 @@ class Frame(wx.Frame):
         ev_intensity = []
 
         """Determine y workspace bounds"""
-        y_ws_ufm, y_ws_ev = []
+        y_ws_ufm = []
+        y_ws_ev = []
 
         rectangle_y = self.first_rectangle_y
         y_ws_ev.append(rectangle_y)
@@ -183,9 +184,9 @@ class Frame(wx.Frame):
             x_center = (self.haptic_width)/2
             x_biasedcenter = x_center+self.textbox_width
             
-            x_haptic_switch = [x_biasedcenter-150,x_biasedcenter+150]
-            x_ufm_dropoff = [x_biasedcenter-250,x_biasedcenter+250] 
-            x_ev_max = [x_biasedcenter-30,x_biasedcenter+30] 
+            x_haptic_switch = [x_biasedcenter-200,x_biasedcenter+200]
+            x_ufm_dropoff = [x_biasedcenter-400,x_biasedcenter+400] 
+            x_ev_max = [x_biasedcenter-75,x_biasedcenter+75] 
 
             c1 = (x_haptic_switch[0]-x_biasedcenter)**2
             c2 = (x_ufm_dropoff[0]-x_biasedcenter)**2
@@ -197,21 +198,25 @@ class Frame(wx.Frame):
             aev = (1.0-kev)/c3
 
             """Set haptic intensity = 0 over textbox"""
-            ufm_intensity = ev_intensity = [0]*self.textbox_width
+            ufm_intensity = [0]*int(self.textbox_width)
+            ev_intensity = [0]*int(self.textbox_width)
             
-            for index in range(self.haptic_width):
+            for index in range(int(self.haptic_width)):
                 index = index + self.textbox_width
 
+                #print(x_ufm_dropoff, index)
                 if (index <= x_ufm_dropoff[0] or index >= x_ufm_dropoff[1]): 
                     ufm_intensity.append(1.0)
                     ev_intensity.append(0.0)
 
-                elif (index <= x_ufm_dropoff or x >= x_ufm_dropoff[1]):
+                else:
                     ufm_int = aufm*(index-x_biasedcenter)**2+kufm
                     ufm_intensity.append(max(0,min(1,ufm_int)))
 
                     ev_int = aev*(index-x_biasedcenter)**2+kev
                     ev_intensity.append(max(0,min(1,ev_int))) 
+
+            #print (ufm_intensity)
 
         elif texture == "Sinusoid":
             periods = 3
@@ -237,12 +242,12 @@ class Frame(wx.Frame):
             for i in range(periods*4):
                 if UFM_INCREASE: UFM_INCREASE = not UFM_INCREASE
                 elif EV_INCREASE: EV_INCREASE = not EV_INCREASE
-                else UFM_INCREASE = True
+                #else UFM_INCREASE = True
                 
                 for index in range(triangle_width):
                     if (UFM_INCREASE and not EV_INCREASE):
                         amp = index/triangle_width
-                        ufm_intensity.append(amp
+                        ufm_intensity.append(amp)
 
         elif texture == "Square":
             periods = 10 
@@ -261,20 +266,22 @@ class Frame(wx.Frame):
 
         ev_msg = WSArray()
         ev_msg.header.stamp = rospy.Time(0.0)
-        ev_msg.ystep = 3
+        ev_msg.ystep = 2
         ev_msg.y_ws = y_ws_ev
         ev_msg.intstep = 1
         ev_msg.intensity = ev_intensity
+        #print ev_intensity
 
         ufm_msg = WSArray()
         ufm_msg.header.stamp = rospy.Time(0.0)
-        ufm_msg.ystep = 3
+        ufm_msg.ystep = 2
         ufm_msg.y_ws = y_ws_ufm
         ufm_msg.intstep = 1
         ufm_msg.intensity = ufm_intensity
+        #print ufm_intensity
 
-        self.ws_ufm_pub.pub(ufm_msg)
-        self.ws_ev_pub.pub(ev_msg)
+        self.ws_ufm_pub.publish(ufm_msg)
+        self.ws_ev_pub.publish(ev_msg)
 
 # Run the program
 if __name__ == "__main__":

@@ -59,7 +59,7 @@ class haptic_controller(OutputController):
                     intensity = 0
 
             if self._i2cbus:
-                if (intensity >= self.last_intensity*0.95 or intensity <= self.last_intensity*0.975):
+                if (intensity >= self.last_intensity*0.99 or intensity <= self.last_intensity*1.01):
                     #print(intensity, ir_xy.data[0], ir_y)
                     self.DAC_output(self._A0max*intensity, self._A1max*intensity)
                     self.last_intensity = intensity

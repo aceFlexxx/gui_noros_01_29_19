@@ -12,6 +12,7 @@ import os
 #    RUN_FLAG = 1
 
 import pyautogui
+pyautogui.FAILSAFE = False
 RUN_FLAG = 1
 
 #else:
@@ -21,9 +22,9 @@ class IR_Controller():
     
     def __init__(self, *args, **kargs):
         rospy.init_node('cursor_control')
-        self.cursor_pub = rospy.Publisher('/cursor_position/corrected', IntArray, queue_size=0)
-        self.raw_pub = rospy.Publisher('/cursor_position/raw', IntArray, queue_size=0)
-        self.rate = 20
+        self.cursor_pub = rospy.Publisher('/cursor_position/corrected', IntArray, queue_size=1)
+        self.raw_pub = rospy.Publisher('/cursor_position/raw', IntArray, queue_size=1)
+        self.rate = 5
 
         self._xscale = 1.08 
         self._yscale = 1.3115
@@ -59,7 +60,7 @@ class IR_Controller():
 
         self.cursor_pub.publish(self.corrected_position_msg)
 
-        pyautogui.moveTo(self.corrected_position[0], self.corrected_position[1])
+        #pyautogui.moveTo(self.corrected_position[0], self.corrected_position[1])
 
         self.last_position = self.corrected_position
 

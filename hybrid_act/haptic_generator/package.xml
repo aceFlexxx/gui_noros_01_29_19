@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>ufm_controller</name>
+  <name>haptic_generator</name>
   <version>0.0.0</version>
-  <description>The ufm_controller package</description>
+  <description>The haptic_controller package</description>
 
   <build_depend>message_generation</build_depend>
   <exec_depend>message_runtime</exec_depend>

@@ -3,7 +3,7 @@
 import smbus
 import time
 
-class OutputController(object):
+class MAX518_Controller(object):
 
     def __init__(self, address):
         self._i2cbus = smbus.SMBus(1)

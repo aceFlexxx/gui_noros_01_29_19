@@ -1,20 +1,18 @@
 <?xml version="1.0"?>
 
 <launch>
+    <arg name="method" default"full"/>
 
-    <node name="ufm_control" pkg="haptic_generator" type="haptic_control.py" output="screen">
-        <param name="name" value="ufm"/>
-        <param name="spi_address" value="0" type="int"/>
-        <param name="i2c_address" value="45" type="int"/>
-        <param name="scale" value="0.55"/>
-    </node>
+    <group if="$(eval method == 'full')">
+        <node name="ufm_haptics" pkg="haptic_generator" type="haptic_control.py" output="screen">
+            <param name="name" value="ufm"/>
+        </node>
 
-    <node name="ev_control" pkg="haptic_generator" type="haptic_control.py" output="screen">
-        <param name="name" value="ev"/>
-        <param name="spi_address" value="0" type="int"/>
-        <param name="i2c_address" value="44" type="int"/>
-        <param name="scale" value="0.85"/>
-    </node>
+        <node name="ev_haptics" pkg="haptic_generator" type="haptic_control.py" output="screen">
+            <param name="name" value="ev"/>
+        </node>
+    </group>
 
+    <include file="$(find output_controller)/launch/output.launch" />
 </launch>
 

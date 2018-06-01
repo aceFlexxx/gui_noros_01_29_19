@@ -1,15 +1,17 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>ws_generator</name>
+  <name>output_controller</name>
   <version>0.0.0</version>
-  <description>The ws_generator package</description>
+  <description>The output_controller package</description>
 
   <build_depend>message_generation</build_depend>
   <exec_depend>message_runtime</exec_depend>
 
   <maintainer email="ubuntu@todo.todo">ubuntu</maintainer>
 
+
   <license>TODO</license>
+
 
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>rospy</build_depend>
@@ -20,7 +22,6 @@
   <exec_depend>std_msgs</exec_depend>
 
 
-  <!-- The export tag contains other, unspecified, tags -->
   <export>
     <!-- Other tools can request additional information be placed here -->
 

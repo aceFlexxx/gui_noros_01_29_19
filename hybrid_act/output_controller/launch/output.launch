@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+
+<launch>
+
+    <node name="ufm_control" pkg="output_controller" type="output_control.py" output="screen">
+        <param name="name" value="ufm"/>
+        <param name="spi_address" value="0" type="int"/>
+        <param name="i2c_address" value="45" type="int"/>
+        <param name="scale" value="0.55"/>
+    </node>
+
+    <node name="ev_control" pkg="output_controller" type="output_control.py" output="screen">
+        <param name="name" value="ev"/>
+        <param name="spi_address" value="0" type="int"/>
+        <param name="i2c_address" value="44" type="int"/>
+        <param name="scale" value="0.85"/>
+    </node>
+
+</launch>
+

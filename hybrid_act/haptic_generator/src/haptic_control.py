@@ -2,7 +2,7 @@
 
 import numpy as np
 import rospy
-from std_msgs.msg import Float
+from std_msgs.msg import Float32
 from haptic_generator.msg import IntArray, WSArray
 
 class haptic_controller():
@@ -14,7 +14,7 @@ class haptic_controller():
 
         self.ir_sub = rospy.Subscriber('/cursor_position/corrected', IntArray, self.actuation_callback, queue_size = 1)
         self.ws_sub = rospy.Subscriber('/cursor_position/workspace/'+self.haptic_name, WSArray, self.ws_callback, queue_size = 1)
-        self.int_pub = rospy.Publisher('/cursor_position/intensity/'+self.haptic_name, Float, queue_size = 1)
+        self.int_pub = rospy.Publisher('/'+self.haptic_name+'_intensity/', Float32, queue_size = 1)
 
         self.last_intensity = 0
         self.ws = None

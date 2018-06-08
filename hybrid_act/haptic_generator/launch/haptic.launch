@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <launch>
-    <arg name="method" default"full"/>
+    <arg name="method" default="full"/>
 
     <group if="$(eval method == 'full')">
         <node name="ufm_haptics" pkg="haptic_generator" type="haptic_control.py" output="screen">

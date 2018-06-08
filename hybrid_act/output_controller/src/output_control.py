@@ -2,7 +2,7 @@
 
 import rospy
 import time
-from std_msgs.msg import Float
+from std_msgs.msg import Float32
 from MAX518 import MAX518_Controller
 
 class Output_Controller(MAX518_Controller):
@@ -11,18 +11,17 @@ class Output_Controller(MAX518_Controller):
         rospy.init_node('output_control')
 
         self.haptic_name = rospy.get_param('~name')
-        spi_address = rospy.get_param('~spi_address')
         i2c_address = rospy.get_param('~i2c_address')
         scale = rospy.get_param('~scale')
 
-        OutputController.__init__(self,i2c_address)
+        MAX518_Controller.__init__(self,i2c_address)
         time.sleep(1)
 
-        self._A0max = 3.9*scale
+        self._A0max = 4.1*scale
         self._A1max = 1.05*scale
 
 
-        self.int_sub = rospy.Subscriber('/cursor_position/intensity/'+self.haptic_name, Float, self.int_callback, queue_size = 1)
+        self.int_sub = rospy.Subscriber('/'+self.haptic_name+'_intensity/', Float32, self.int_callback, queue_size = 1)
 
         rospy.on_shutdown(self.close)
         rospy.spin()

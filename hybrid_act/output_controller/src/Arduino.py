@@ -4,19 +4,22 @@ import time
 import datetime
 import struct
 
-class Frequencies():
-    def __init__(self, port = None, baudrate =115200, timeout=1):
+class frequency_controller(object): 
+    def __init__(self, port = None, baudrate = 57600, timeout=1):
         self._start_message = b'\x02'
         self._end_message = b'\xff\xff'
         self._pkgtimeout = 10
         self._pkgtimeout_timer = 0
-        self._messagewaittime = 0.010
+        self._messagewaittime = 0.025
         self._droppedpackages = 0
 
         self._serial_recursions = 0
         self._serial_timer = 300
         if port:
             self.ser = serial.Serial(port = port,baudrate = baudrate , timeout = timeout)
+            self.ser.bytesize = serial.EIGHTBITS #number of bits per bytes
+            self.ser.parity = serial.PARITY_NONE #set parity check: no parity
+            self.ser.stopbits = serial.STOPBITS_ONE #number of stop bits
 
         else:
             self.ser = None
@@ -31,57 +34,41 @@ class Frequencies():
         if self.ser:
             self.ser.close()
 
-    def get_frequency(self,n,m):
+    def send_receive_frequency(self,arduino_case,freq):
         if self.ser:
-            self.ser.write(b'\x02')
+            self.ser.write(arduino_case)
             time.sleep(self._messagewaittime)
             
-            self.sendinfo(n)
+            self.sendinfo(freq)
 
-            self.sendinfo(m)
-
-            data1 = self.ser.read(self.ser.inWaiting())
-            #print('data1 ',data1)
+            rdata = self.ser.read(size=self.ser.in_waiting)
             time.sleep(self._messagewaittime)
-            parsedData1 = self._parseData(data1)
-            time.sleep(self._messagewaittime)
-            #print('parse1d', parsedData1)
-             
-            data2 = self.ser.read(self.ser.inWaiting())
-            #print('data2 ',data2)
-            time.sleep(self._messagewaittime)
-            parsedData2 = self._parseData(data2)
-            time.sleep(self._messagewaittime)
-            #print('parsed2', parsedData2)
+            parsedData = self._parseData(rdata)
 
             try:
-                if len(parsedData1) > 2 or not len(parsedData1):
+                if len(parsedData) > 2:
                     raise ValueError('Bad Serial')
-                #print('trying')
-                output = []
                 
-                output.append(struct.unpack('>H',parsedData1[0:2])[0])
-                output.append(struct.unpack('>H',parsedData2[0:2])[0])
-                
-                self._pkgtimeout_timer = 0
+                output = struct.unpack('>H', parsedData[0:2])[0]
                 return output
+
             except:
-                print('fucked')
                 self._pkgtimeout_timer += 1
                 self._droppedpackages += 1
                 if self._pkgtimeout_timer > self._pkgtimeout:
                     raise ValueError ('Bad Data')
                 else:
-                    self.ser.reset_input_buffer()
-                    self.ser.reset_output_buffer()
-                    return self.get_frequency
+                    self.ser.flushInput()
+                    self.ser.flushOutput()
+                    return self.send_receive_frequency(arduino_case,freq)
 
         else:
             print ('Serial Communication not Established')
        
     def sendinfo(self, info):
-        for i in range(2):
-            self.ser.write(bytes([struct.pack('>H',info)[i]]))
+        b = struct.pack('>H', info)
+        for value in b:
+            self.ser.write(value)
             time.sleep(self._messagewaittime)
 
     def _parseData(self,package):
@@ -111,9 +98,10 @@ class Frequencies():
             self._serial_recursions += 1
             package = package + self.ser.read(self.ser.inWaiting())
             return self._parseData(package)
+
                         
 if ( __name__ == "__main__" ):
-    arduino = Frequencies(port = '/dev/cu.usbmodem1411', baudrate = 115200)
-    for i in range(19,20):
-        print(i,'and',i-9, arduino.get_frequency(i,i-9))
+    arduino = frequency_controller(port = '/dev/ttyACM1', baudrate = 57600)
+    print(arduino.send_receive_frequency(b'\x02',10000))
+    time.sleep(.1)
 

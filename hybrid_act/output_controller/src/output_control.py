@@ -21,7 +21,7 @@ class Output_Controller(MAX518_Controller):
         self._A1max = 1.05*scale
 
 
-        self.int_sub = rospy.Subscriber('/'+self.haptic_name+'_intensity/', Float32, self.int_callback, queue_size = 1)
+        self.int_sub = rospy.Subscriber('/'+self.haptic_name+'/intensity/', Float32, self.int_callback, queue_size = 1)
 
         rospy.on_shutdown(self.close)
         rospy.spin()

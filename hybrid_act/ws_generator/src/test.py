@@ -1,12 +1,12 @@
 #! /usr/bin/env python
 
 import wx
-import rospy
-import rospkg
 import numpy as np
 import os
-from std_msgs.msg import String
+import main
+import rospy
 from ws_generator.msg import WSArray
+from std_msgs.msg import String
 
 ##############################################################################80
 class Texture:
@@ -25,12 +25,12 @@ class Frame(wx.Frame):
     #----------------------------------------------------------------------
     def __init__(self):
         """"""
-        self.ws_ufm_pub = rospy.Publisher('/cursor_position/workspace/ufm', WSArray, queue_size = 0)
-        self.ws_ev_pub = rospy.Publisher('/cursor_position/workspace/ev', WSArray, queue_size = 0)
-        self.rospack = rospkg.RosPack()
-        rospy.init_node('gui_ws')
+        #self.ws_ufm_pub = rospy.Publisher('/cursor_position/workspace/ufm', WSArray, queue_size = 0)
+        #self.ws_ev_pub = rospy.Publisher('/cursor_position/workspace/ev', WSArray, queue_size = 0)
+        #rospy.init_node('gui_ws')
 
-        wx.Frame.__init__(self, None, wx.ID_ANY, "Hybridization Comparison")
+
+        wx.Frame.__init__(self, parent = None, id = wx.ID_ANY,title = wx.EmptyString,pos = wx.DefaultPosition, size = wx.Size(500,300), style = wx.SYSTEM_MENU)
         self.Maximize(True)
         self.width, self.height = wx.GetDisplaySize()
         self.width_half = self.width/2.0
@@ -64,6 +64,9 @@ class Frame(wx.Frame):
 
         sampleList = []
 
+        backButton = wx.Button(self.panel,wx.ID_ANY,'BACK')
+        backButton.Bind(wx.EVT_BUTTON,self.onButton)
+
         self.cb = wx.ComboBox(self.panel,
                               size=wx.DefaultSize,
                               choices=sampleList,
@@ -77,12 +80,18 @@ class Frame(wx.Frame):
         #sizer.Add(self.cb, 0, wx.ALL, 5)
         #self.panel.SetSizer(sizer)
 
+    def onButton(self,event):
+
+        fr = main.frameMain(None)
+        self.Close()
+        fr.Show()
+
     #----------------------------------------------------------------------
     def widgetMaker(self, widget, objects):
         """"""
         for obj in objects:
             widget.Append(obj.shape, obj)
-        widget.Bind(wx.EVT_COMBOBOX, self.onSelect)
+            widget.Bind(wx.EVT_COMBOBOX, self.onSelect)
 
     #----------------------------------------------------------------------
     def OnPaint(self, evt):
@@ -93,9 +102,7 @@ class Frame(wx.Frame):
         dc.SetBackground(brush)
         dc.Clear()
 
-        #path = os.path.join('~/catkin_ws/src/hue/hybrid_act/ws_generator/ref', 'haptics_symp.png')
-        path = self.rospack.get_path('ws_generator')
-        path = os.path.join(path, 'ref/haptics_symp.png')
+        path = os.path.join('../ws_generator/src', 'haptics_symp.jpg')
         picture = wx.Bitmap(path)
         width,height = picture.GetSize()
 
@@ -145,14 +152,14 @@ class Frame(wx.Frame):
     #----------------------------------------------------------------------
     def onSelect(self, event):
         """"""
-        print "You selected: " + self.cb.GetStringSelection()
+        print ("You selected: " + self.cb.GetStringSelection())
         obj = self.cb.GetClientData(self.cb.GetSelection())
         text = """
         The object's attributes are:
         %s  %s
 
         """ % (obj.id, obj.shape)
-        print text
+        print (text)
         self.generate_workspace(self.cb.GetStringSelection())
 
     def generate_workspace(self, texture):
@@ -282,24 +289,6 @@ class Frame(wx.Frame):
                     ufm_intensity.append(0.0)
                     ev_intensity.append(1.0)
 
-        ev_msg = WSArray()
-        ev_msg.header.stamp = rospy.Time(0.0)
-        ev_msg.ystep = 2
-        ev_msg.y_ws = y_ws_ev
-        ev_msg.intstep = 1
-        ev_msg.intensity = ev_intensity
-        #print ev_intensity
-
-        ufm_msg = WSArray()
-        ufm_msg.header.stamp = rospy.Time(0.0)
-        ufm_msg.ystep = 2
-        ufm_msg.y_ws = y_ws_ufm
-        ufm_msg.intstep = 1
-        ufm_msg.intensity = ufm_intensity
-        #print ufm_intensity
-
-        self.ws_ufm_pub.publish(ufm_msg)
-        self.ws_ev_pub.publish(ev_msg)
 
 # Run the program
 if __name__ == "__main__":

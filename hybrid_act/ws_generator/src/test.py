@@ -1,27 +1,27 @@
 #! /usr/bin/env python
-
+import csv
 import wx
 import numpy as np
 import os
-import main
 import rospy
-from ws_generator.msg import WSArray
+#from ws_generator.msg import WSArray
 from std_msgs.msg import String
 
-##############################################################################80
-class Texture:
-    """"""
-
-    #----------------------------------------------------------------------
-    def __init__(self, id, shape):
-        """Constructor"""
-        self.id = id
-        self.shape = shape
+import main
+import utils
 
 
 ##############################################################################80
-class Frame(wx.Frame):
+#class Texture:
+#    """"""
+#    def __init__(self, id, shape):
+#        """Constructor"""
+#        self.id = id
+#        self.shape = shape
 
+##############################################################################80
+
+class Frame(utils.GuiFrame):
     #----------------------------------------------------------------------
     def __init__(self):
         """"""
@@ -29,265 +29,104 @@ class Frame(wx.Frame):
         #self.ws_ev_pub = rospy.Publisher('/cursor_position/workspace/ev', WSArray, queue_size = 0)
         #rospy.init_node('gui_ws')
 
+        utils.GuiFrame.__init__(self)
+        # dictionary in the shape of:
+        # test_num: test_condition,actuation_method1,actuation_method2,texture1,texture2,freq1,freq2,amp1,amp2
+        self.HYBRID_COUNT = 0
+        self.TRESHOLD_COUNT = 0
+        self.TEXTURE_COUNT = 0
+        self.THRESH_FLIPS = 0
 
-        wx.Frame.__init__(self, parent = None, id = wx.ID_ANY,title = wx.EmptyString,pos = wx.DefaultPosition, size = wx.Size(500,300), style = wx.SYSTEM_MENU)
-        self.Maximize(True)
-        self.width, self.height = wx.GetDisplaySize()
-        self.width_half = self.width/2.0
+        self.CORRECT = None
 
-        self.first_rectangle_y = 0.1*self.height
-        self.bottom_space = 0.035*self.height
+        self.REPEAT_TESTS = 2
+        self.TEST_CASE = 0
 
-        self.rectangle_size = 0.175*self.height
-        self.rectangle_seperation = int((self.height-self.first_rectangle_y-self.bottom_space-3*self.rectangle_size)/3.0)
+        self.test_conditions = None
+        self.determine_next_test()
+        self.determine_next_condition()
+        
 
-        self.rectangle_color = "GREY"
+    def determine_next_test(self):
+        # start hybridization test
+        if self.HYBRID_COUNT < self.REPEAT_TESTS:
+            self.hybridization_set()
+            self.tc = self.test_conditions[0]
+            self.HYBRID_COUNT += 1
+            self.determine_next_condition()
 
-        self.textbox_width = 0.20*self.width
-        self.textbox_x = 0.04*self.width
-        self.textbox_y = self.rectangle_size*0.35
-        self.textbox_color = "WHITE"
-        self.textbox_fontsize = 42
+    def determine_next_condition(self):
+        if self.THRESH_FLIPS < 3:
+            if self.CORRECT:
+                self.output = {0: [self.tc[1], self.output[0][1]-0.05, self.tc[3], self.tc[4]], \
+                                1: [self.tc[2], 1.0, self.tc[3], self.tc[4]]}
+            else:
+                self.output = {0: [self.tc[1], self.output[0][1]+0.05, self.tc[3], self.tc[4]], \
+                                1: [self.tc[2], 1.0, self.tc[3], self.tc[4]]}
+                self.THRESH_FLIPS += 1
 
-        self.haptic_width = self.width - self.textbox_width
+            self.define_correct_selection()
+            self.generate_ws()
 
-        self.background_color = "BLACK"
+        else:
+            self.THRESH_FLIPS = 0
+            del self.test_conditions[self.TEST_CASE]
+            self.TEST_CASE += 1
+            try:
+                self.tc = self.test_conditions[self.TEST_CASE]
+                self.determine_next_condition()
 
-        # Add a panel so it looks the correct on all platforms
-        self.panel = wx.Panel(self, wx.ID_ANY)
-        self.panel.Bind(wx.EVT_PAINT, self.OnPaint)
+            except KeyError as e:
+                self.determine_next_test()
+                
+    def hybridization_set(self):
+        self.test_conditions = {0:[1,"Hybrid","EV","Sinusoid",5], \
+                                1:[1,"Hybrid","UFM","Sinusoid",5], \
+                                2:[1,"UFM","Hybrid","Sinusoid",5], \
+                                3:[1,"EV","Hybrid","Sinusoid",5]}
 
-        textures = [Texture(0, "Bump"),
-                    Texture(1, "Sinusoidal"),
-                    Texture(2, "Triangular"),
-                    Texture(3, "Square")]
 
-        sampleList = []
+    def define_correct_selection(self):
+        self.correct_selection = 2
 
-        backButton = wx.Button(self.panel,wx.ID_ANY,'BACK')
-        backButton.Bind(wx.EVT_BUTTON,self.onButton)
+    def option(self,event,selected,correct_selection):
+        #print a message confirming whether option was correct or wrong
+        if selected == correct_selection:
+            message = wx.MessageDialog(self,"That is correct!","Answer",wx.OK)
+            self.colorit()
+        else:
+            message = wx.MessageDialog(self,"Sorry, try again","Answer",wx.OK)
+            self.colorit()
 
-        self.cb = wx.ComboBox(self.panel,
-                              size=wx.DefaultSize,
-                              choices=sampleList,
-                              pos=(0.1*self.width,0.05*self.height))
-        self.widgetMaker(self.cb, textures)
+        message.ShowModal()
+        #restart main page to try again
+        self.textbox_color1 = "WHITE"
+        self.textbox_color2 = "WHITE"
+        self.layout()
+    
+    def colorit(self):
+        #it paints the right answer
+        correct_selection=self.define_correct_selection()
+        if correct_selection==1:
+            self.textbox_color1 = "BLUE"
+        else:
+            self.textbox_color2 = "BLUE"
+        self.layout()
 
-        self.Centre()
-        self.Show()
-
-        #sizer = wx.BoxSizer(wx.VERTICAL)
-        #sizer.Add(self.cb, 0, wx.ALL, 5)
-        #self.panel.SetSizer(sizer)
-
-    def onButton(self,event):
-
-        fr = main.frameMain(None)
-        self.Close()
-        fr.Show()
-
+    
     #----------------------------------------------------------------------
-    def widgetMaker(self, widget, objects):
-        """"""
-        for obj in objects:
-            widget.Append(obj.shape, obj)
-            widget.Bind(wx.EVT_COMBOBOX, self.onSelect)
+#    def onSelect(self, event):
+#        """"""
+#        print ("You selected: " + self.cb.GetStringSelection())
+#        obj = self.cb.GetClientData(self.cb.GetSelection())
+#        text = """
+#        The object's attributes are:
+#        %s  %s
+#
+#        """ % (obj.id, obj.shape)
+#        print (text)
+#        self.generate_workspace(self.cb.GetStringSelection())
 
-    #----------------------------------------------------------------------
-    def OnPaint(self, evt):
-        """set up the device for painting"""
-        dc = wx.PaintDC(self.panel)
-        dc.BeginDrawing()
-        brush = wx.Brush(self.background_color)
-        dc.SetBackground(brush)
-        dc.Clear()
-
-        path = os.path.join('../ws_generator/src', 'haptics_symp.jpg')
-        picture = wx.Bitmap(path)
-        width,height = picture.GetSize()
-
-        dc.DrawBitmap(picture,(self.width-width)/2,(self.height-height)/2,True)
-        font = wx.Font(self.textbox_fontsize, wx.ROMAN, wx.FONTSTYLE_NORMAL, wx.NORMAL)
-        dc.SetFont(font)
-
-        """EV Rectangle"""
-        rectangle_y = self.first_rectangle_y
-        dc.SetPen(wx.Pen(self.rectangle_color))
-        dc.SetBrush(wx.Brush(self.rectangle_color))
-        # set x, y, w, h for rectangle
-        dc.DrawRectangle(0, rectangle_y, self.width, self.rectangle_size)
-        dc.SetPen(wx.Pen(self.textbox_color))
-        dc.SetBrush(wx.Brush(self.textbox_color))
-        dc.DrawRectangle(0, rectangle_y, self.textbox_width, self.rectangle_size)
-        textbox = wx.Rect(self.textbox_x, rectangle_y+self.textbox_y)
-        dc.DrawLabel("EV", textbox, alignment=1)
-
-        """UFM Rectangle"""
-        rectangle_y = self.first_rectangle_y+(self.rectangle_size+self.rectangle_seperation)
-        dc.SetPen(wx.Pen(self.rectangle_color))
-        dc.SetBrush(wx.Brush(self.rectangle_color))
-        # set x, y, w, h for rectangle
-        dc.DrawRectangle(0, rectangle_y, self.width, self.rectangle_size)
-        dc.SetPen(wx.Pen(self.textbox_color))
-        dc.SetBrush(wx.Brush(self.textbox_color))
-        dc.DrawRectangle(0, rectangle_y, self.textbox_width, self.rectangle_size)
-        textbox = wx.Rect(self.textbox_x, rectangle_y+self.textbox_y)
-        dc.DrawLabel("UFM", textbox, alignment=1)
-
-        """Hybrid Rectangle"""
-        rectangle_y = self.first_rectangle_y+(self.rectangle_size+self.rectangle_seperation)*2
-        dc.SetPen(wx.Pen(self.rectangle_color))
-        dc.SetBrush(wx.Brush(self.rectangle_color))
-        # set x, y, w, h for rectangle
-        dc.DrawRectangle(0, rectangle_y, self.width, self.rectangle_size)
-        dc.SetPen(wx.Pen(self.textbox_color))
-        dc.SetBrush(wx.Brush(self.textbox_color))
-        dc.DrawRectangle(0, rectangle_y, self.textbox_width, self.rectangle_size)
-        textbox = wx.Rect(self.textbox_x, rectangle_y+self.textbox_y)
-        dc.DrawLabel("Hybrid", textbox, alignment=1)
-
-        dc.EndDrawing()
-        del dc
-
-    #----------------------------------------------------------------------
-    def onSelect(self, event):
-        """"""
-        print ("You selected: " + self.cb.GetStringSelection())
-        obj = self.cb.GetClientData(self.cb.GetSelection())
-        text = """
-        The object's attributes are:
-        %s  %s
-
-        """ % (obj.id, obj.shape)
-        print (text)
-        self.generate_workspace(self.cb.GetStringSelection())
-
-    def generate_workspace(self, texture):
-
-        ufm_intensity = []
-        ev_intensity = []
-
-        """Determine y workspace bounds"""
-        y_ws_ufm = []
-        y_ws_ev = []
-
-        rectangle_y = self.first_rectangle_y
-        y_ws_ev.append(rectangle_y)
-        y_ws_ev.append(rectangle_y+self.rectangle_size)
-
-        rectangle_y = rectangle_y + self.rectangle_size + self.rectangle_seperation
-        y_ws_ufm.append(rectangle_y)
-        y_ws_ufm.append(rectangle_y + self.rectangle_size)
-
-        rectangle_y = rectangle_y + self.rectangle_size + self.rectangle_seperation
-        y_ws_ev.append(rectangle_y)
-        y_ws_ev.append(rectangle_y + self.rectangle_size)
-        y_ws_ufm.append(rectangle_y)
-        y_ws_ufm.append(rectangle_y + self.rectangle_size)
-
-        """Determine x intensities correlating with texture"""
-        if texture == "Bump":
-
-            x_center = (self.haptic_width)/2
-            x_biasedcenter = x_center+self.textbox_width
-
-            x_haptic_switch = [x_biasedcenter-225,x_biasedcenter+225]
-            x_ufm_dropoff = [x_biasedcenter-400,x_biasedcenter+400]
-            x_ev_max = [x_biasedcenter-75,x_biasedcenter+75]
-
-            c1 = (x_haptic_switch[0]-x_biasedcenter)**2
-            c2 = (x_ufm_dropoff[0]-x_biasedcenter)**2
-            kufm = -c1/(c2-c1)
-            aufm = (1.0-kufm)/c2
-
-            c3 = (x_ev_max[0]-x_biasedcenter)**2
-            kev = -c1/(c3-c1)
-            aev = (1.0-kev)/c3
-
-            """Set haptic intensity = 0 over textbox"""
-            ufm_intensity = [0]*int(self.textbox_width)
-            ev_intensity = [0]*int(self.textbox_width)
-
-            for index in range(int(self.haptic_width)):
-                index = index + self.textbox_width
-
-                #print(x_ufm_dropoff, index)
-                if (index <= x_ufm_dropoff[0] or index >= x_ufm_dropoff[1]):
-                    ufm_intensity.append(1.0)
-                    ev_intensity.append(0.0)
-
-                else:
-                    ufm_int = aufm*(index-x_biasedcenter)**2+kufm
-                    ufm_intensity.append(max(0,min(1,ufm_int)))
-
-                    ev_int = aev*(index-x_biasedcenter)**2+kev
-                    ev_intensity.append(max(0,min(1,ev_int)))
-
-            #print (ufm_intensity)
-
-        elif texture == "Sinusoidal":
-            periods = 5
-
-            """Set haptic intensity = 0 over textbox"""
-            ufm_intensity = [0]*int(self.textbox_width)
-            ev_intensity = [0]*int(self.textbox_width)
-
-            for index in range(int(self.haptic_width)):
-                sinusoid = np.sin(index/self.haptic_width*periods*2*np.pi)
-                ufm_intensity.append(max(0,sinusoid))
-                ev_intensity.append(max(0,-sinusoid))
-
-        elif texture == "Triangular":
-            periods = 5
-            triangle_halfwidth = self.haptic_width/(2.0*2*periods)
-
-
-            """Set haptic intensity = 0 over textbox"""
-            ufm_intensity = [0]*int(self.textbox_width)
-            ev_intensity = [0]*int(self.textbox_width)
-            intensity = []
-            triangle_shape = []
-
-            for i in range(int(triangle_halfwidth)):
-                intensity = i/triangle_halfwidth
-                triangle_shape.append(intensity)
-                ufm_intensity.append(intensity)
-                ev_intensity.append(0.0)
-
-            for intensity in reversed(triangle_shape):
-                triangle_shape.append(intensity)
-                ufm_intensity.append(intensity)
-                ev_intensity.append(0.0)
-
-            for intensity in triangle_shape:
-                ev_intensity.append(intensity)
-                ufm_intensity.append(0.0)
-
-            if periods > 1:
-                for i in range(2,periods+1):
-                    for intensity in triangle_shape:
-                        ufm_intensity.append(intensity)
-                        ev_intensity.append(0.0)
-
-                    for intensity in triangle_shape:
-                        ufm_intensity.append(0.0)
-                        ev_intensity.append(intensity)
-
-        elif texture == "Square":
-            periods = 5
-
-            """Set haptic intensity = 0 over textbox"""
-            ufm_intensity = [0]*int(self.textbox_width)
-            ev_intensity = [0]*int(self.textbox_width)
-
-            for index in range(int(self.haptic_width)):
-                sinusoid = np.sin(index/self.haptic_width*periods*2*np.pi)
-                if (sinusoid > 0):
-                    ufm_intensity.append(1.0)
-                    ev_intensity.append(0.0)
-                else:
-                    ufm_intensity.append(0.0)
-                    ev_intensity.append(1.0)
 
 
 # Run the program

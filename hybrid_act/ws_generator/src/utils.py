@@ -2,6 +2,7 @@
 import wx
 import os
 import main
+import numpy as np
 
 ##############################################################################80
 #class Texture:
@@ -30,8 +31,8 @@ class GuiFrame(wx.Frame):
         self.textbox_width = self.width
         self.textbox_x = 0.04*self.width
         self.textbox_y = self.rectangle_size*0.35
-        self.textbox_color1 = "WHITE"
-        self.textbox_color2 = "WHITE"
+        self.rectangle_color = "WHITE"
+        #self.rectangle_color2 = "WHITE"
         self.textbox_fontsize = int(42*((self.width*self.height)/(1794816)))
         
         self.haptic_width = self.width
@@ -41,14 +42,13 @@ class GuiFrame(wx.Frame):
         # Add a panel so it looks correct on all platforms
         self.panel = wx.Panel(self, wx.ID_ANY)
         self.panel.Bind(wx.EVT_PAINT, self.OnPaint) 
-        #set up screen
-        self.layout()
-        self.Centre()
-        self.Show()
 
     def layout(self):#set up buttons and texts
+        if self.tc[0] == 1:
+            gui_question = "Which rectangle felt stronger?"
+
         back_button = wx.Button(self.panel,wx.ID_ANY,'BACK')
-        label = wx.StaticText(self.panel,wx.ID_ANY,label="Which one felt stronger?",pos=(0,.7*self.height))
+        label = wx.StaticText(self.panel,wx.ID_ANY,label=gui_question,pos=(0,.7*self.height))
         label.SetFont(wx.Font(self.textbox_fontsize,wx.ROMAN,wx.NORMAL,wx.BOLD))
         button_1 = wx.Button(self.panel,wx.ID_ANY, '1',pos=(0,self.height*.8),size=(self.width_half,.2*self.height))
         button_2 = wx.Button(self.panel,wx.ID_ANY, '2',pos=(self.width_half,self.height*.8),size=(self.width_half,.2*self.height))
@@ -57,13 +57,11 @@ class GuiFrame(wx.Frame):
         button_1.SetFont(wx.Font(self.textbox_fontsize,wx.ROMAN,wx.NORMAL,wx.BOLD))
         button_2.SetFont(wx.Font(self.textbox_fontsize,wx.ROMAN,wx.NORMAL,wx.BOLD))
 
-        self.define_correct_selection()
-        
         ##connect buttons to functions
         back_button.Bind(wx.EVT_BUTTON,self.BackButton)
         #add arguments when connecting buttons to functions using lambda
-        button_1.Bind(wx.EVT_BUTTON,lambda evt: self.option(evt,1,self.correct_selection))
-        button_2.Bind(wx.EVT_BUTTON,lambda evt: self.option(evt,2,self.correct_selection))
+        button_1.Bind(wx.EVT_BUTTON,lambda evt: self.option(evt,1))
+        button_2.Bind(wx.EVT_BUTTON,lambda evt: self.option(evt,2))
         self.OnPaint(0)#draw again
 
     #go back
@@ -84,48 +82,42 @@ class GuiFrame(wx.Frame):
 
         """Rectangle 1"""
         rectangle_y = self.first_rectangle_y
-        dc.SetBrush(wx.Brush(self.textbox_color1))
-        dc.DrawRectangle(0, rectangle_y, self.textbox_width, self.rectangle_size)
+        dc.SetPen(wx.Pen(self.rectangle_color))
+        dc.SetBrush(wx.Brush(self.rectangle_color))
+        dc.DrawRectangle(0,rectangle_y, self.width, self.rectangle_size)
         textbox = wx.Rect(self.textbox_x, rectangle_y+self.textbox_y)
         dc.DrawLabel("1)", textbox, alignment=1)
 
         """Rectangle 2"""
         rectangle_y = self.first_rectangle_y+(self.rectangle_size+self.rectangle_seperation)
-        dc.SetBrush(wx.Brush(self.textbox_color2))
-        dc.DrawRectangle(0, rectangle_y, self.textbox_width, self.rectangle_size)
+        dc.DrawRectangle(0,rectangle_y, self.width, self.rectangle_size)
         textbox = wx.Rect(self.textbox_x, rectangle_y+self.textbox_y)
         dc.DrawLabel("2)", textbox, alignment=1)
         dc.EndDrawing()
         del dc
     
-    def generate_workspace(self):
+    def generate_ws(self):
 
-        intensity_1 = [0]*int(self.width)
-        intensity_2 = [0]*int(self.width)
+        intensity_1 = np.zeros(int(self.width))
+        intensity_2 = np.zeros(int(self.width))
 
         """Determine y workspace bounds"""
         y_ws1 = []
         y_ws2 = []
 
         rectangle_y = self.first_rectangle_y
-        y_ws_ev.append(rectangle_y)
-        y_ws_ev.append(rectangle_y+self.rectangle_size)
+        y_ws1.append(rectangle_y)
+        y_ws1.append(rectangle_y+self.rectangle_size)
 
         rectangle_y = rectangle_y + self.rectangle_size + self.rectangle_seperation
-        y_ws_ufm.append(rectangle_y)
-        y_ws_ufm.append(rectangle_y + self.rectangle_size)
-
-        rectangle_y = rectangle_y + self.rectangle_size + self.rectangle_seperation
-        y_ws_ev.append(rectangle_y)
-        y_ws_ev.append(rectangle_y + self.rectangle_size)
-        y_ws_ufm.append(rectangle_y)
-        y_ws_ufm.append(rectangle_y + self.rectangle_size)
+        y_ws2.append(rectangle_y)
+        y_ws2.append(rectangle_y + self.rectangle_size)
 
         if texture == "Sinusoid":
 
             for index in range(int(self.haptic_width)):
                 sinusoid = np.sin(index/self.haptic_width*periods*2*np.pi)
-                ufm_intensity.append(max(0,sinusoid))
+                intensity.append(max(0,sinusoid))
                 ev_intensity.append(max(0,-sinusoid))
 
 

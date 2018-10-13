@@ -70,18 +70,15 @@ class frameMain ( wx.Frame ):
         
         def onName( self,event):
             #save on the csv file the name of the user
-            Name=self.name.GetValue()
-            with open('output.csv','w') as f:
-                write=csv.writer(f, quoting=csv.QUOTE_ALL)
-                write.writerow([Name,'correct answer'])
-            self.name.SetValue("")
-            f.close()
+            self.csvfile = self.name.GetValue() + '.csv'
+            with open(self.csvfile, 'w+') as fout:
+                fout.close()
 
         def onMinimize( self, event ):
             self.Hide()
 
 	def onTest( self, event ):
-            f = test.Frame() #test page opens
+            f = test.Frame(self.csvfile) #test page opens
 	    self.Close()
             f.Show()
 

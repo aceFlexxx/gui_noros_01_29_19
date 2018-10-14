@@ -6,7 +6,7 @@ import rospy
 import random
 import time
 
-#from ws_generator.msg import WSArray
+from ws_generator.msg import WSArray
 from std_msgs.msg import String
 
 #Other GUI utilites
@@ -14,23 +14,13 @@ import main
 import utils
 
 
-##############################################################################80
-#class Texture:
-#    """"""
-#    def __init__(self, id, shape):
-#        """Constructor"""
-#        self.id = id
-#        self.shape = shape
-
-##############################################################################80
-
 class Frame(utils.GuiFrame):
     #----------------------------------------------------------------------
     def __init__(self,csvfile):
         """"""
-        #self.ws_ufm_pub = rospy.Publisher('/cursor_position/workspace/ufm', WSArray, queue_size = 0)
-        #self.ws_ev_pub = rospy.Publisher('/cursor_position/workspace/ev', WSArray, queue_size = 0)
-        #rospy.init_node('gui_ws')
+        self.ws_ufm_pub = rospy.Publisher('/cursor_position/workspace/ufm', WSArray, queue_size = 0)
+        self.ws_ev_pub = rospy.Publisher('/cursor_position/workspace/ev', WSArray, queue_size = 0)
+        rospy.init_node('start_ws')
 
         utils.GuiFrame.__init__(self)
 
@@ -88,20 +78,16 @@ class Frame(utils.GuiFrame):
             self.end_time = time.time()
             self.elapsed_time = self.end_time - self.start_time
             self.save_data()
-            #print(self.rand_output[0],self.rand_output[1],self.THRESHOLD_FLIPS,self.HYBRID_COUNT)
             self.determine_next_condition()
 
     def determine_next_test(self):
         # start hybridization test
-        print(self.HYBRID_COUNT, self.REPEAT_TESTS)
         if self.HYBRID_COUNT < self.REPEAT_TESTS:
-            print("Going through Test conditions", self.HYBRID_COUNT, self.REPEAT_TESTS)
             self.hybridization_set()
             self.tc = self.test_conditions[0]
             self.HYBRID_COUNT += 1
 
         else:
-            print("Closing GUI")
             f = main.frameMain(None)
             self.Close()
             f.Show()
@@ -121,7 +107,9 @@ class Frame(utils.GuiFrame):
 
             self.randomize_output()
             self.define_correct_selection()
-            self.start_time = time.time()
+            intensity, y_ws = self.generate_ws()
+            print(self.rand_output)
+            self.publish_intensity(intensity,y_ws)
             
         else:
             # reset Threshold flips
@@ -151,6 +139,22 @@ class Frame(utils.GuiFrame):
             s = ','.join(l) + '\n'
             fout.write(s)
             fout.close()
+
+    def publish_intensity(self,intensity,y_ws):
+        ufm_msg = WSArray()
+        ufm_msg.y_ws1 = y_ws[0]
+        ufm_msg.y_ws2 = y_ws[1]
+        ufm_msg.intensity1 = intensity[0]
+        ufm_msg.intensity2 = intensity[1]
+
+        ev_msg = WSArray()
+        ev_msg.y_ws1 = y_ws[0]
+        ev_msg.y_ws2 = y_ws[1]
+        ev_msg.intensity1 = intensity[2]
+        ev_msg.intensity2 = intensity[3]
+
+        self.ws_ufm_pub.publish(ufm_msg)
+        self.ws_ev_pub.publish(ev_msg)
                 
     def hybridization_set(self):
         # construct conditions in the form of, test#: test_id, test_actuation, control_actuation, texture, freq

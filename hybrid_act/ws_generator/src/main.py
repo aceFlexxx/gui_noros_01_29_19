@@ -11,8 +11,12 @@
 import wx
 import wx.xrc
 import csv
+import os
+
+import rospy
+import rospkg
+
 import start # page that accesses "games"
-import test  #page made by kyle "gui_generator"
 ###########################################################################
 ## Class frameMain  
 ###########################################################################
@@ -30,6 +34,7 @@ class frameMain ( wx.Frame ):
             self.minimizeBtn=wx.Button(self, wx.ID_ANY,label="_") 
             self.label = wx.StaticText(self, wx.ID_ANY, 'Name: ') 
             self.name = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString)
+            self.rospack = rospkg.RosPack()
 
 	    # Connect buttons to Events
             self.minimizeBtn.Bind( wx.EVT_BUTTON, self.onMinimize)
@@ -70,7 +75,9 @@ class frameMain ( wx.Frame ):
         
         def onName( self,event):
             #save on the csv file the name of the user
-            self.csvfile = self.name.GetValue() + '.csv'
+            path = self.rospack.get_path('ws_generator')
+            self.csvfile = path + '/src/csvfiles/' + self.name.GetValue() + '.csv'
+
             with open(self.csvfile, 'w+') as fout:
                 fout.close()
 
@@ -78,12 +85,12 @@ class frameMain ( wx.Frame ):
             self.Hide()
 
 	def onTest( self, event ):
-            f = test.Frame(self.csvfile) #test page opens
+            f = test.Frame() #test page opens
 	    self.Close()
             f.Show()
 
 	def onStart( self, event ):
-            f = start.Frame() #start page opens
+            f = start.Frame(self.csvfile) #start page opens
             self.Close()
             f.Show()
 

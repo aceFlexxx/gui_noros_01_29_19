@@ -1,8 +1,11 @@
 #! /usr/bin/env python
-import wx
 import os
-import main
+import time
 import numpy as np
+
+import wx
+
+import main
 
 ##############################################################################80
 #class Texture:
@@ -27,15 +30,16 @@ class GuiFrame(wx.Frame):
         self.rectangle_size = 0.175*self.height
         self.rectangle_seperation = int((self.height-self.first_rectangle_y-self.bottom_space-3*self.rectangle_size)/3.0)
         
+
         #set up textbox and lines 
         self.textbox_width = self.width
         self.textbox_x = 0.04*self.width
         self.textbox_y = self.rectangle_size*0.35
         self.rectangle_color = "WHITE"
-        #self.rectangle_color2 = "WHITE"
-        self.textbox_fontsize = int(42*((self.width*self.height)/(1794816)))
+        self.textbox_fontsize = int(42*((self.width*self.height)/(1794816.)))
         
         self.haptic_width = self.width
+        self.horiz_pixels = np.arange(self.haptic_width)
         
         self.background_color = "BLACK"
         
@@ -45,7 +49,7 @@ class GuiFrame(wx.Frame):
 
     def layout(self):#set up buttons and texts
         if self.tc[0] == 1:
-            gui_question = "Which rectangle felt stronger?"
+            gui_question = "Which Texture Felt Stronger?"
 
         back_button = wx.Button(self.panel,wx.ID_ANY,'BACK')
         label = wx.StaticText(self.panel,wx.ID_ANY,label=gui_question,pos=(0,.7*self.height))
@@ -97,37 +101,43 @@ class GuiFrame(wx.Frame):
         del dc
     
     def generate_ws(self):
-
-        intensity_1 = np.zeros(int(self.width))
-        intensity_2 = np.zeros(int(self.width))
-
+        intensity = np.zeros([4,self.haptic_width])
         """Determine y workspace bounds"""
-        y_ws1 = []
-        y_ws2 = []
-
+        y_ws = np.zeros([2,2]) 
         rectangle_y = self.first_rectangle_y
-        y_ws1.append(rectangle_y)
-        y_ws1.append(rectangle_y+self.rectangle_size)
-
+        y_ws[0] = [rectangle_y,rectangle_y+self.rectangle_size]
         rectangle_y = rectangle_y + self.rectangle_size + self.rectangle_seperation
-        y_ws2.append(rectangle_y)
-        y_ws2.append(rectangle_y + self.rectangle_size)
+        y_ws[1] = [rectangle_y,rectangle_y + self.rectangle_size]
 
-        if texture == "Sinusoid":
+        haptic_width = float(self.haptic_width)
 
-            for index in range(int(self.haptic_width)):
-                sinusoid = np.sin(index/self.haptic_width*periods*2*np.pi)
-                intensity.append(max(0,sinusoid))
-                ev_intensity.append(max(0,-sinusoid))
+        # output has form of channel: actuation, amplitude, texture, frequency
+        for i,value in enumerate(self.rand_output.values()):
+            amp = int(value[1]*100)
+            if value[2] == "Sinusoid":
+                if value[0] == "Hybrid":
+                    sinusoid = amp*np.sin(self.horiz_pixels/haptic_width*value[3]*2*np.pi)
+                    print(sinusoid.astype(int).tolist())
+                    ind = [np.where(sinusoid>0)[0], np.where(sinusoid<=0)[0]]
+                    intensity[2*i][ind[0]] = sinusoid[ind[0]]
+                    intensity[2*i+1][ind[1]] = -sinusoid[ind[1]]
+                elif value[0] == "UFM":
+                    intensity[2*i] = amp/2*np.sin(self.horiz_pixels/haptic_width*value[3]*2*np.pi) + amp/2
+                elif value[0] == "EV":
+                    intensity[2*i+1] = amp/2*np.sin(self.horiz_pixels/haptic_width*value[3]*2*np.pi) + amp/2
 
+            elif value[2]  == "Square":
+                sinusoid = np.sin(self.horiz_pixels/haptic_width*value[3]*2*np.pi)
+                ind = [np.where(sinusoid>0)[0], np.where(sinusoid<=0)[0]]
 
-        elif texture == "Square":
-            
-            for index in range(int(self.haptic_width)):
-                sinusoid = np.sin(index/self.haptic_width*periods*2*np.pi)
-                if (sinusoid > 0):
-                    ufm_intensity.append(1.0)
-                    ev_intensity.append(0.0)
-                else:
-                    ufm_intensity.append(0.0)
-                    ev_intensity.append(1.0)
+                if value[0] == "Hybrid":
+                    intensity[2*i][ind[0]] = amp
+                    intensity[2*i+1][ind[1]] = amp
+                elif value[0] == "UFM":
+                    intensity[2*i][ind[0]] = amp
+                elif value[0] == "EV":
+                    intensity[2*i+1][ind[1]] = amp
+
+        self.start_time = time.time()
+        return intensity.astype(int).tolist(), y_ws.astype(int).tolist()
+        

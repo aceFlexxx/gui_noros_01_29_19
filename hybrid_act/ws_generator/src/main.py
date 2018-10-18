@@ -17,19 +17,20 @@ import rospy
 import rospkg
 
 import start # page that accesses "games"
+import demo # page that accesses "games"
 ###########################################################################
 ## Class frameMain  
 ###########################################################################
 
 class frameMain ( wx.Frame ):
 
-	def __init__ ( self, parent ):
+        def __init__ ( self, parent ):
 	    wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = u"Main", size = wx.GetDisplaySize(), style = wx.SYSTEM_MENU|wx.MAXIMIZE|wx.TAB_TRAVERSAL )
 
             #setting up buttons:
             self.submitBtn = wx.Button( self, wx.ID_ANY, label="Submit") 
             self.startBtn = wx.Button( self, wx.ID_ANY, label="Start") 
-            self.testBtn = wx.Button( self, wx.ID_ANY, label="Test")
+            self.demoBtn = wx.Button( self, wx.ID_ANY, label="Demo")
             self.closeBtn = wx.Button(self, wx.ID_ANY, label="X")
             self.minimizeBtn=wx.Button(self, wx.ID_ANY,label="_") 
             self.label = wx.StaticText(self, wx.ID_ANY, 'Name: ') 
@@ -40,7 +41,7 @@ class frameMain ( wx.Frame ):
             self.minimizeBtn.Bind( wx.EVT_BUTTON, self.onMinimize)
 	    self.submitBtn.Bind( wx.EVT_BUTTON, self.onName )
 	    self.startBtn.Bind( wx.EVT_BUTTON, self.onStart )
-            self.testBtn.Bind( wx.EVT_BUTTON, self.onTest )
+            self.demoBtn.Bind( wx.EVT_BUTTON, self.onDemo )
             self.closeBtn.Bind(wx.EVT_BUTTON, self.onClose)
             #set up screen	
             self.layout()
@@ -59,8 +60,8 @@ class frameMain ( wx.Frame ):
             nameBox.Add( self.name,4,wx.CENTER|wx.EXPAND,0)
             nameBox.Add( self.submitBtn,2, 0, 0)
             
+            startBox.Add( self.demoBtn, 4, 0, 0 )
             startBox.Add( self.startBtn, 4, 0, 0 )
-            startBox.Add( self.testBtn, 4, 0, 0 )
 
             mainBox.Add( topBox, 4, wx.ALIGN_RIGHT, 0 )
             mainBox.Add( nameBox, 0, wx.ALIGN_CENTER, 0 )
@@ -84,8 +85,8 @@ class frameMain ( wx.Frame ):
         def onMinimize( self, event ):
             self.Hide()
 
-	def onTest( self, event ):
-            f = test.Frame() #test page opens
+	def onDemo( self, event ):
+            f = demo.Frame() #test page opens
 	    self.Close()
             f.Show()
 

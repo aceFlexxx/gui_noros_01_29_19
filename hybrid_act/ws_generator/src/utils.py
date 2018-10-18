@@ -113,11 +113,12 @@ class GuiFrame(wx.Frame):
 
         # output has form of channel: actuation, amplitude, texture, frequency
         for i,value in enumerate(self.rand_output.values()):
+            print(len(self.rand_output.values()))
+            print(self.rand_output.values()[0])
             amp = int(value[1]*100)
             if value[2] == "Sinusoid":
                 if value[0] == "Hybrid":
                     sinusoid = amp*np.sin(self.horiz_pixels/haptic_width*value[3]*2*np.pi)
-                    print(sinusoid.astype(int).tolist())
                     ind = [np.where(sinusoid>0)[0], np.where(sinusoid<=0)[0]]
                     intensity[2*i][ind[0]] = sinusoid[ind[0]]
                     intensity[2*i+1][ind[1]] = -sinusoid[ind[1]]

@@ -6,15 +6,9 @@ import struct
 
 class ArduinoController(): 
 
-    def __init__(self,port=None,baudrate=115200,timeout=.25):
+    def __init__(self,port=None,baudrate=57600,timeout=.25):
         if port:
-            self.ser = serial.Serial(port = port,baudrate = baudrate , timeout = timeout)
-            time.sleep(2)
-            count = 0
-            while not ser.isOpen():
-                count += 1
-                if count > 1e5:
-                    raise RuntimeError
+            self.initPort(
 
         else:
             self.ser = None
@@ -55,13 +49,11 @@ class ArduinoController():
             if len(data) < incoming_msgsize:
                 resend_count += 1
                 print('Data read in is shorter than expected message size')
-            
             else:
-                checksum_received = data[0]
-            
+                checksum_received = struct.unpack('B',data[0])[0]
         return data
        
-    def initPort(self, port, baudrate, timeout = 1):
+    def initPort(self, port, baudrate, timeout = 0.25):
         if self.ser:
             self.ser.close()
         else:

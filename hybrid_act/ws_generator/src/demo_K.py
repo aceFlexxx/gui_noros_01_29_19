@@ -213,8 +213,8 @@ class Frame(wx.Frame):
         ev_intensity = np.zeros([2,self.haptic_width])
 
         """Determine y workspace bounds"""
-        y_ws_ufm = np.zeros([1,2])
-        y_ws_ev = np.zeros(2])
+        y_ws_ufm = [] 
+        y_ws_ev = [] 
 
         rectangle_y = self.first_rectangle_y
         
@@ -231,45 +231,47 @@ class Frame(wx.Frame):
         y_ws_ufm.append(rectangle_y) 
         y_ws_ufm.append(rectangle_y + self.rectangle_size)
 
+        haptic_width = float(self.haptic_width)
+
         """Determine x intensities correlating with texture"""
-        if texture == "Bump":
-
-            x_center = (self.haptic_width)/2
-            x_biasedcenter = x_center+self.textbox_width
-            
-            x_haptic_switch = [x_biasedcenter-225,x_biasedcenter+225]
-            x_ufm_dropoff = [x_biasedcenter-400,x_biasedcenter+400] 
-            x_ev_max = [x_biasedcenter-75,x_biasedcenter+75] 
-
-            c1 = (x_haptic_switch[0]-x_biasedcenter)**2
-            c2 = (x_ufm_dropoff[0]-x_biasedcenter)**2
-            kufm = -c1/(c2-c1) 
-            aufm = (1.0-kufm)/c2
-
-            c3 = (x_ev_max[0]-x_biasedcenter)**2
-            kev = -c1/(c3-c1)
-            aev = (1.0-kev)/c3
-
-            """Set haptic intensity = 0 over textbox"""
-            ufm_intensity = [0]*int(self.textbox_width)
-            ev_intensity = [0]*int(self.textbox_width)
-            
-            for index in range(int(self.haptic_width)):
-                index = index + self.textbox_width
-
-                #print(x_ufm_dropoff, index)
-                if (index <= x_ufm_dropoff[0] or index >= x_ufm_dropoff[1]): 
-                    ufm_intensity.append(1.0)
-                    ev_intensity.append(0.0)
-
-                else:
-                    ufm_int = aufm*(index-x_biasedcenter)**2+kufm
-                    ufm_intensity.append(max(0,min(1,ufm_int)))
-
-                    ev_int = aev*(index-x_biasedcenter)**2+kev
-                    ev_intensity.append(max(0,min(1,ev_int))) 
-
-            #print (ufm_intensity)
+#        if texture == "Bump":
+#
+#            x_center = (self.haptic_width)/2
+#            x_biasedcenter = x_center+self.textbox_width
+#            
+#            x_haptic_switch = [x_biasedcenter-225,x_biasedcenter+225]
+#            x_ufm_dropoff = [x_biasedcenter-400,x_biasedcenter+400] 
+#            x_ev_max = [x_biasedcenter-75,x_biasedcenter+75] 
+#
+#            c1 = (x_haptic_switch[0]-x_biasedcenter)**2
+#            c2 = (x_ufm_dropoff[0]-x_biasedcenter)**2
+#            kufm = -c1/(c2-c1) 
+#            aufm = (1.0-kufm)/c2
+#
+#            c3 = (x_ev_max[0]-x_biasedcenter)**2
+#            kev = -c1/(c3-c1)
+#            aev = (1.0-kev)/c3
+#
+#            """Set haptic intensity = 0 over textbox"""
+#            ufm_intensity = [0]*int(self.textbox_width)
+#            ev_intensity = [0]*int(self.textbox_width)
+#            
+#            for index in range(int(self.haptic_width)):
+#                index = index + self.textbox_width
+#
+#                #print(x_ufm_dropoff, index)
+#                if (index <= x_ufm_dropoff[0] or index >= x_ufm_dropoff[1]): 
+#                    ufm_intensity.append(1.0)
+#                    ev_intensity.append(0.0)
+#
+#                else:
+#                    ufm_int = aufm*(index-x_biasedcenter)**2+kufm
+#                    ufm_intensity.append(max(0,min(1,ufm_int)))
+#
+#                    ev_int = aev*(index-x_biasedcenter)**2+kev
+#                    ev_intensity.append(max(0,min(1,ev_int))) 
+#
+#            #print (ufm_intensity)
 
         elif texture == "Sinusoidal":
             periods = 1/frequency

@@ -33,7 +33,7 @@ class frameMain ( wx.Frame ):
             self.demoBtn = wx.Button( self, wx.ID_ANY, label="Demo")
             self.closeBtn = wx.Button(self, wx.ID_ANY, label="X")
             self.minimizeBtn=wx.Button(self, wx.ID_ANY,label="_") 
-            self.label = wx.StaticText(self, wx.ID_ANY, 'Name: ') 
+            self.label = wx.StaticText(self, wx.ID_ANY, 'User ID: ') 
             self.name = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString)
             self.rospack = rospkg.RosPack()
 
@@ -41,10 +41,18 @@ class frameMain ( wx.Frame ):
             self.minimizeBtn.Bind( wx.EVT_BUTTON, self.onMinimize)
 	    self.submitBtn.Bind( wx.EVT_BUTTON, self.onName )
 	    self.startBtn.Bind( wx.EVT_BUTTON, self.onStart )
+	    #self.name.Bind( wx.EVT_TEXT, self.check_string )
             self.demoBtn.Bind( wx.EVT_BUTTON, self.onDemo )
             self.closeBtn.Bind(wx.EVT_BUTTON, self.onClose)
-            #set up screen	
+            #set up screen	i
+
+            self.startBtn.Disable()
+
             self.layout()
+
+      #  def check_string(self, event):
+      #      if not (self.name.GetValue()==''):
+      #          self.submitBtn.Enable()
 
         def layout(self):
 	    topBox = wx.BoxSizer( wx.HORIZONTAL )#box for buttons close and minimize 
@@ -78,9 +86,7 @@ class frameMain ( wx.Frame ):
             #save on the csv file the name of the user
             path = self.rospack.get_path('ws_generator')
             self.csvfile = path + '/src/csvfiles/' + self.name.GetValue() + '.csv'
-
-            with open(self.csvfile, 'w+') as fout:
-                fout.close()
+            self.startBtn.Enable()
 
         def onMinimize( self, event ):
             self.Hide()
@@ -91,6 +97,9 @@ class frameMain ( wx.Frame ):
             f.Show()
 
 	def onStart( self, event ):
+            with open(self.csvfile, 'w+') as fout:
+                fout.close()
+
             f = start.Frame(self.csvfile) #start page opens
             self.Close()
             f.Show()

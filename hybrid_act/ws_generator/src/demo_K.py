@@ -51,7 +51,7 @@ class Frame(wx.Frame):
         self.textbox_fontsize = 42 
 
         self.haptic_width = self.width - self.textbox_width
-
+        self.horiz_pixels = np.arange(self.haptic_width)
         self.background_color = "BLACK"
 
         # Add a panel so it looks the correct on all platforms
@@ -209,8 +209,8 @@ class Frame(wx.Frame):
         self.generate_workspace(texture,Amplitude_EV,Amplitude_UFM,Amplitude_H,freq)
 
     def generate_workspace(self,texture,Amplitude_EV,Amplitude_UFM,Amplitude_H,frequency):
-        ufm_intensity = np.zeros([2,self.haptic_width])
-        ev_intensity = np.zeros([2,self.haptic_width])
+        ufm_intensity = np.zeros(2*self.haptic_width)
+        ev_intensity = np.zeros(2*self.haptic_width)
 
         """Determine y workspace bounds"""
         y_ws_ufm = [] 
@@ -274,16 +274,31 @@ class Frame(wx.Frame):
 #            #print (ufm_intensity)
 
         elif texture == "Sinusoidal":
-            periods = 1/frequency
-
+             
             """Set haptic intensity = 0 over textbox"""
-            ufm_intensity = [0]*int(self.textbox_width)
-            ev_intensity = [0]*int(self.textbox_width)
+            #ufm_intensity = [0]*int(self.textbox_width)
+            #ev_intensity = [0]*int(self.textbox_width)
 
-            for index in range(int(self.haptic_width)):
-                sinusoid = np.sin(index/self.haptic_width*periods*2*np.pi)
-                ufm_intensity.append(max(0,sinusoid))
-                ev_intensity.append(max(0,-sinusoid))
+            #for index in range(int(self.haptic_width)):
+            #   sinusoid = np.sin(index/self.haptic_width*periods*2*np.pi)
+            #   ev_intensity = Amplitude_EV/2*np.sin(self.horiz_pixel/haptic_width*frequency*2*np.pi)+Amplitude_UFM/2 
+               # np.append(max(0,sinusoid))
+               # ev_intensity = np.append(max(0,-sinusoid))
+
+            sinusoid = np.sin(self.horiz_pixels/haptic_width*frequency*2*np.pi)
+            ind = [np.where(sinusoid>0)[0],np.where(sinusoid<=0)[0]]
+            hybridufm_intensity[ind[0]] = sinusoid[ind[0]]
+            hybridev_intensity[ind[1]] = -sinusoid[ind[1]]
+
+            positive_sin = sinusoid/2.+0.5
+            ufm_intensity = positive_sin
+            ev_intensity = positive_sin
+
+            hybridufm_intensity = np.append(zeros(self.textbox_width),hybridufm_intensity))
+            ufm_intensity = np.append(zeros(self.textbox_width),ufm_intensity)
+            ev_intensity = np.append(zeros(self.textbox_width),ev_intensity)
+
+
 
         elif texture == "Triangular":
             periods = 1/frequency
@@ -337,6 +352,8 @@ class Frame(wx.Frame):
                     ufm_intensity.append(0.0)
                     ev_intensity.append(1.0)
 
+        ufm_intensity = np.append(ufm_amplitde*ufm_intensity,hybrid_amplitude*hybridufm_intensity)
+        ev_intensity = np.append(zeros(len(self.textbox_width),ev_intensity)
         ev_msg = WSArray()
         ev_msg.header.stamp = rospy.Time(0.0)
         ev_msg.y_step = 2
@@ -345,7 +362,7 @@ class Frame(wx.Frame):
         #ev_msg.intensity = ev_intensity
         print(type(Amplitude_EV))
         print(type(ev_intensity))
-        #ev_msg.intensity = Amplitude_EV*ev_intensity + Amplitude_H*ufm_intensity
+        #ev_msg.intensity = Amplitude_EV*ev_intensity + Amplitude_H*ev_intensity
         #print ev_intensity
 
         ufm_msg = WSArray()

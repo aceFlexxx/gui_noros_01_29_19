@@ -194,6 +194,6 @@ class Frame(utils.GuiFrame):
 # Run the program
 if __name__ == "__main__":
     app = wx.App(False)
-    frame = Frame()
+    frame = Frame('./csvfiles/test.py')
     frame.Show()
     app.MainLoop()

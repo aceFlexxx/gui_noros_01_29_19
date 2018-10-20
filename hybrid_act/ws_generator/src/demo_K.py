@@ -234,56 +234,47 @@ class Frame(wx.Frame):
         haptic_width = float(self.haptic_width)
 
         """Determine x intensities correlating with texture"""
-#        if texture == "Bump":
-#
-#            x_center = (self.haptic_width)/2
-#            x_biasedcenter = x_center+self.textbox_width
-#            
-#            x_haptic_switch = [x_biasedcenter-225,x_biasedcenter+225]
-#            x_ufm_dropoff = [x_biasedcenter-400,x_biasedcenter+400] 
-#            x_ev_max = [x_biasedcenter-75,x_biasedcenter+75] 
-#
-#            c1 = (x_haptic_switch[0]-x_biasedcenter)**2
-#            c2 = (x_ufm_dropoff[0]-x_biasedcenter)**2
-#            kufm = -c1/(c2-c1) 
-#            aufm = (1.0-kufm)/c2
-#
-#            c3 = (x_ev_max[0]-x_biasedcenter)**2
-#            kev = -c1/(c3-c1)
-#            aev = (1.0-kev)/c3
-#
-#            """Set haptic intensity = 0 over textbox"""
-#            ufm_intensity = [0]*int(self.textbox_width)
-#            ev_intensity = [0]*int(self.textbox_width)
-#            
-#            for index in range(int(self.haptic_width)):
-#                index = index + self.textbox_width
-#
-#                #print(x_ufm_dropoff, index)
-#                if (index <= x_ufm_dropoff[0] or index >= x_ufm_dropoff[1]): 
-#                    ufm_intensity.append(1.0)
-#                    ev_intensity.append(0.0)
-#
-#                else:
-#                    ufm_int = aufm*(index-x_biasedcenter)**2+kufm
-#                    ufm_intensity.append(max(0,min(1,ufm_int)))
-#
-#                    ev_int = aev*(index-x_biasedcenter)**2+kev
-#                    ev_intensity.append(max(0,min(1,ev_int))) 
-#
-#            #print (ufm_intensity)
+        if texture == "Bump":                                                
+                                                                             
+            x_center = (self.haptic_width)/2                                 
+            x_biasedcenter = x_center+self.textbox_width                     
+                                                                             
+            x_haptic_switch = [x_biasedcenter-225,x_biasedcenter+225]        
+            x_ufm_dropoff = [x_biasedcenter-400,x_biasedcenter+400]          
+            x_ev_max = [x_biasedcenter-75,x_biasedcenter+75]                 
+                                                                             
+            c1 = (x_haptic_switch[0]-x_biasedcenter)**2                      
+            c2 = (x_ufm_dropoff[0]-x_biasedcenter)**2                        
+            kufm = -c1/(c2-c1)                                               
+            aufm = (1.0-kufm)/c2                                             
+                                                                             
+            c3 = (x_ev_max[0]-x_biasedcenter)**2                             
+            kev = -c1/(c3-c1)                                                
+            aev = (1.0-kev)/c3                                               
+                                                                             
+            """Set haptic intensity = 0 over textbox"""                      
+            ufm_intensity = np.zeros(self.width)                      
+            ev_intensity = np.zeros(self.width)                       
+                                                                             
+            for index in range(int(self.haptic_width)):                      
+                index = index + self.textbox_width                           
+                                                                             
+                #print(x_ufm_dropoff, index)                                 
+                if (index <= x_ufm_dropoff[0] or index >= x_ufm_dropoff[1]): 
+                    ufm_intensity[index] = 1.0                                
+                    ev_intensity[index] = 0.0                                
+                                                                             
+                else:                                                        
+                    ufm_int = aufm*(index-x_biasedcenter)**2+kufm            
+                    ufm_intensity = np.append(ufm_intensity,max(0,min(1,ufm_int)))              
+                                                                             
+                    ev_int = aev*(index-x_biasedcenter)**2+kev               
+                    ev_intensity = np.append(ev,intensity,max(0,min(1,ev_int)))                
+                                                                             
 
         elif texture == "Sinusoidal":
              
             """Set haptic intensity = 0 over textbox"""
-            #ufm_intensity = [0]*int(self.textbox_width)
-            #ev_intensity = [0]*int(self.textbox_width)
-
-            #for index in range(int(self.haptic_width)):
-            #   sinusoid = np.sin(index/self.haptic_width*periods*2*np.pi)
-            #   ev_intensity = Amplitude_EV/2*np.sin(self.horiz_pixel/haptic_width*frequency*2*np.pi)+Amplitude_UFM/2 
-               # np.append(max(0,sinusoid))
-               # ev_intensity = np.append(max(0,-sinusoid))
 
             sinusoid = np.sin(self.horiz_pixels/haptic_width*frequency*2*np.pi)
             ind = [np.where(sinusoid>0)[0],np.where(sinusoid<=0)[0]]
@@ -295,9 +286,9 @@ class Frame(wx.Frame):
             ev_intensity = positive_sin
 
             hybridufm_intensity = np.append(zeros(self.textbox_width),hybridufm_intensity))
+            hybridev_intensity = np.append(zeros(self.textbox_width),hybridev_intensity))
             ufm_intensity = np.append(zeros(self.textbox_width),ufm_intensity)
             ev_intensity = np.append(zeros(self.textbox_width),ev_intensity)
-
 
 
         elif texture == "Triangular":
@@ -337,23 +328,26 @@ class Frame(wx.Frame):
                         ev_intensity.append(intensity)
 
         elif texture == "Square":
-            periods = 1/frequency
+            square = np.zeros(self.width) 
+            sinusoid = np.sin(self.horiz_pixels/haptic_width*frequency*2*np.pi)
+            ind = [np.where(sinusoid>0)[0],np.where(sinusoid<=0)[0]]
+            square[ind[0]] = 1
+            square[ind[1]] = -1
+            hybridufm_intensity[ind[0]] = square[ind[0]]
+            hybridev_intensity[ind[1]] = -square[ind[1]]
+            ufm_intensity = (1+square)/2
+            ev_intensity = (1+square)/2
+            
+            hybridufm_intensity = np.append(zeros(self.textbox_width),hybridufm_intensity))
+            hybridev_intensity = np.append(zeros(self.textbox_width),hybridev_intensity))
+            ufm_intensity = np.append(zeros(self.textbox_width),ufm_intensity)
+            ev_intensity = np.append(zeros(self.textbox_width),ev_intensity)
 
-            """Set haptic intensity = 0 over textbox"""
-            ufm_intensity = [0]*int(self.textbox_width)
-            ev_intensity = [0]*int(self.textbox_width)
 
-            for index in range(int(self.haptic_width)):
-                sinusoid = np.sin(index/self.haptic_width*periods*2*np.pi)
-                if (sinusoid > 0):
-                    ufm_intensity.append(1.0)
-                    ev_intensity.append(0.0)
-                else:
-                    ufm_intensity.append(0.0)
-                    ev_intensity.append(1.0)
 
         ufm_intensity = np.append(ufm_amplitde*ufm_intensity,hybrid_amplitude*hybridufm_intensity)
         ev_intensity = np.append(zeros(len(self.textbox_width),ev_intensity)
+        
         ev_msg = WSArray()
         ev_msg.header.stamp = rospy.Time(0.0)
         ev_msg.y_step = 2

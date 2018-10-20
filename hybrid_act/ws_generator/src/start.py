@@ -1,13 +1,13 @@
 #! /usr/bin/env python
 import wx
 import os
-import rospy
+# import rospy
 
 import random
 import time
 
-from ws_generator.msg import WSArray
-from std_msgs.msg import String
+# from ws_generator.msg import WSArray
+# from std_msgs.msg import String
 
 #Other GUI utilites
 import main
@@ -18,9 +18,9 @@ class Frame(utils.GuiFrame):
     #----------------------------------------------------------------------
     def __init__(self,csvfile):
         """"""
-        self.ws_ufm_pub = rospy.Publisher('/cursor_position/workspace/ufm', WSArray, queue_size = 0)
-        self.ws_ev_pub = rospy.Publisher('/cursor_position/workspace/ev', WSArray, queue_size = 0)
-        rospy.init_node('start_ws')
+        # self.ws_ufm_pub = rospy.Publisher('/cursor_position/workspace/ufm', WSArray, queue_size = 0)
+        # self.ws_ev_pub = rospy.Publisher('/cursor_position/workspace/ev', WSArray, queue_size = 0)
+        # rospy.init_node('start_ws')
 
         utils.GuiFrame.__init__(self)
 
@@ -32,7 +32,7 @@ class Frame(utils.GuiFrame):
         self.TEXTURE_COUNT = 0
 
         self.FINISH_FLAG = False
-        
+
         self.THRESHOLD_FLIPS = 0   # variable to save the amount of times user has guessed wrong after guessing right
         self.SIG_THRESHOLDS = 1
         self.REP_INCORRECT = 0
@@ -48,7 +48,7 @@ class Frame(utils.GuiFrame):
 
         self.ws_output = None
         self.rand_output = None
-        
+
         self.test_conditions = None
 
         self.determine_next_test()
@@ -108,8 +108,8 @@ class Frame(utils.GuiFrame):
             self.randomize_output()
             self.define_correct_selection()
             intensity, y_ws = self.generate_ws()
-            self.publish_intensity(intensity,y_ws)
-            
+            # self.publish_intensity(intensity,y_ws)
+
         else:
             # reset Threshold flips
             self.THRESHOLD_FLIPS = 0
@@ -139,22 +139,22 @@ class Frame(utils.GuiFrame):
             fout.write(s)
             fout.close()
 
-    def publish_intensity(self,intensity,y_ws):
-        ufm_msg = WSArray()
-        ufm_msg.header.stamp = rospy.Time(0.0)
-        ufm_msg.y_step = 2
-        ufm_msg.y_ws = y_ws[0] + y_ws[1]
-        ufm_msg.intensity = intensity[0] + intensity[2]
+    # def publish_intensity(self,intensity,y_ws):
+        # ufm_msg = WSArray()
+        # ufm_msg.header.stamp = rospy.Time(0.0)
+        # ufm_msg.y_step = 2
+        # ufm_msg.y_ws = y_ws[0] + y_ws[1]
+        # ufm_msg.intensity = intensity[0] + intensity[2]
 
-        ev_msg = WSArray()
-        ev_msg.header.stamp = rospy.Time(0.0)
-        ev_msg.y_step = 2
-        ev_msg.y_ws = y_ws[0] + y_ws[1]
-        ev_msg.intensity = intensity[1] + intensity[3]
+        # ev_msg = WSArray()
+        # ev_msg.header.stamp = rospy.Time(0.0)
+        # ev_msg.y_step = 2
+        # ev_msg.y_ws = y_ws[0] + y_ws[1]
+        # ev_msg.intensity = intensity[1] + intensity[3]
 
-        self.ws_ufm_pub.publish(ufm_msg)
-        self.ws_ev_pub.publish(ev_msg)
-                
+        # self.ws_ufm_pub.publish(ufm_msg)
+        # self.ws_ev_pub.publish(ev_msg)
+
     def hybridization_set(self):
         # construct conditions in the form of, test#: test_id, test_actuation, control_actuation, texture, freq
         self.test_conditions = {0:[1,"Hybrid","EV","Sinusoid",5], \
@@ -188,9 +188,9 @@ class Frame(utils.GuiFrame):
             if self.CORRECT:
                 self.THRESHOLD_FLIPS += 1
                 self.CORRECT = False
-            
-            self.REP_INCORRECT +=1 
-            
+
+            self.REP_INCORRECT +=1
+
 # Run the program
 if __name__ == "__main__":
     app = wx.App(False)

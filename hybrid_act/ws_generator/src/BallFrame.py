@@ -1,9 +1,4 @@
 
-# coding: utf-8
-
-# In[13]:
-
-
 import wx
 import math
 import random
@@ -26,15 +21,15 @@ class Ball(object):
         dc.SetPen(wx.Pen(self.color,style=wx.TRANSPARENT))
         dc.SetBrush(wx.Brush(self.color,wx.SOLID))
         dc.DrawCircle(self.x+5, self.y+5, self.radius)
-    
+
     def update_limit(self, limit):
         self.x_lim = limit
-    
+
     def move_ball(self, dc, l_xy):
         self.x = l_xy[0]
         self.y = l_xy[1]
         self.draw(dc)
-        
+
     def hold_ball(self, dc):
         self.draw(dc)
 
@@ -55,31 +50,32 @@ class BallPanel(wx.Window):
         self.LENGTH = length
         self.ball_start = [[self.BALL_RADIUS+10,self.BALL_RADIUS], [self.BALL_RADIUS+10,self.BALL_RADIUS*4]]
         self.WAIT = 10
-        
+
         self.wait_count = []
         for l in self.ball_start:
             self.ball.append(Ball(l,self.BALL_RADIUS,self.WIDTH-self.BALL_RADIUS*1.5))
             self.wait_count.append(0)
 
         wx.CallLater(200, self.SetFocus)
+        self.on_size(0)
         self.update_drawing()
 
 
     def on_size(self, event):
         self.WIDTH, self.HEIGHT = self.GetClientSize()
-        self._buffer = wx.Bitmap(self.WIDTH, self.HEIGHT)
+        # self._buffer = wx.Bitmap(self.WIDTH, self.HEIGHT)
         for ball in self.ball:
             ball.update_limit(self.WIDTH-2*self.BALL_RADIUS)
         self.BALL_MOVEX = int(self.BALL_VELOCITY*self.REFRESH*self.WIDTH/(2450.*self.LENGTH))
         self.update_drawing()
 
     def update_drawing(self):
-        self.Refresh(True)        
+        self.Refresh(True)
 
     def on_paint(self, event):
         x, y = self.ScreenToClient(wx.GetMousePosition())
         dc = wx.AutoBufferedPaintDC(self)
-        
+
         for i,ball in enumerate(self.ball):
             if ball.x - self.BALL_RADIUS <= x <= ball.x + self.BALL_RADIUS:
                 if ball.y - self.BALL_RADIUS <= y <= ball.y + self.BALL_RADIUS:
@@ -110,11 +106,11 @@ class BallFrame(wx.Frame):
         self.panel = BallPanel(self, self.REFRESH_RATE, self.SCREEN_LENGTH)
         self.timer = wx.Timer(self)
         self.timer.Start(self.REFRESH_RATE)
-                    
+
     def on_close(self, event):
         self.timer.Stop()
         self.Destroy()
-        
+
     def on_timer(self, event):
         self.panel.update_drawing()
 

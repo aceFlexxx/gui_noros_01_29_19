@@ -55,12 +55,17 @@ class Frame(wx.Frame):
         self.background_color = "BLACK"
 
         # Add a panel so it looks the correct on all platforms
+
+
+	#dynamic text change
+	self.time = wx.DateTime.Now()
+	self.Bind(wx.EVT_TIMER, self.update)
         self.panel = wx.Panel(self, wx.ID_ANY)
         self.panel.Bind(wx.EVT_PAINT, self.OnPaint)
         Frequency_label=wx.StaticText(self.panel,wx.ID_ANY,pos=(0.7*self.width,0.02*self.height),label='Frequency (Hz)')
         self.Frequency= wx.TextCtrl(self.panel, wx.ID_ANY, pos=(0.7*self.width,0.05*self.height))
         self.Frequency.Bind(wx.EVT_TEXT, self.checking)
-
+	
         self.BackBtn = wx.Button(self.panel,wx.ID_ANY,label='BACK',pos=(0,0))
         self.BackBtn.Bind(wx.EVT_BUTTON,self.BackButton)
 
@@ -117,7 +122,7 @@ class Frame(wx.Frame):
 
         self.Centre()
         self.Show()
-
+	self.update()
         #sizer = wx.BoxSizer(wx.VERTICAL)
         #sizer.Add(self.cb, 0, wx.ALL, 5)
         #self.panel.SetSizer(sizer)
@@ -127,7 +132,12 @@ class Frame(wx.Frame):
         f = main.frameMain(None)
         self.Close()
         f.Show()
-
+    def update(self):
+	self.time = wx.DateTime.Now()
+   	self.Frequency.AppendText(self.time.Format("%c", wx.DateTime.CST))
+  	
+	wx.CallLater(1000, self.update) 
+	 
     def widgetMaker(self, widget, objects):
         """"""
         for obj in objects:
@@ -135,9 +145,10 @@ class Frame(wx.Frame):
         widget.Bind(wx.EVT_COMBOBOX, self.checking)
 
     def checking(self, event):
+	
+	self.time = wx.DateTime.Now()
         if not (self.textures.GetStringSelection()=='' or self.Amplitude_EV.GetStringSelection()=='' or self.Amplitude_UFM.GetStringSelection()=='' or self.Amplitude_H.GetStringSelection()=='' or self.Frequency.GetValue()==''):
             self.SubmitBtn.Enable()
-
 
     #----------------------------------------------------------------------
     def OnPaint(self, evt):
@@ -148,6 +159,7 @@ class Frame(wx.Frame):
         dc.SetBackground(brush)
         dc.Clear()
 
+	self.Frequency.AppendText(self.time.Format("%c", wx.DateTime.CST))
         path = os.path.join('~/catkin_ws/src/hue/hybrid_act/ws_generator/ref', 'haptics_symp.png')
         # UNCOMMENT WHEN USING ROS
         # path = self.rospack.get_path('ws_generator')
@@ -205,7 +217,7 @@ class Frame(wx.Frame):
         Amplitude_UFM = float(self.Amplitude_UFM.GetStringSelection())/100
         Amplitude_H = float(self.Amplitude_H.GetStringSelection())/100
         freq=(int(self.Frequency.GetValue()))
-
+	
         self.generate_workspace(texture,Amplitude_EV,Amplitude_UFM,Amplitude_H,freq)
 
     def generate_workspace(self,texture,Amplitude_EV,Amplitude_UFM,Amplitude_H,frequency):

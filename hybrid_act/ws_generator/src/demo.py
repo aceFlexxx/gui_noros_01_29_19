@@ -57,7 +57,6 @@ class Frame(wx.Frame):
         # Add a panel so it looks the correct on all platforms
         self.panel = wx.Panel(self, wx.ID_ANY)
         self.panel.Bind(wx.EVT_PAINT, self.OnPaint)
-
         Frequency_label=wx.StaticText(self.panel,wx.ID_ANY,pos=(0.7*self.width,0.02*self.height),label='Frequency (Hz)')
         self.Frequency= wx.TextCtrl(self.panel, wx.ID_ANY, pos=(0.7*self.width,0.05*self.height))
         self.Frequency.Bind(wx.EVT_TEXT, self.checking)
